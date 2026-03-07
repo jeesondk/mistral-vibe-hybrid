@@ -1,9 +1,24 @@
-# Mistral Vibe Hybrid Setup
+# Mistral Vibe Hybrid Setup 🤖
 
-This repository contains a hybrid agent setup for Mistral Vibe with:
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Open Source](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://opensource.org/)
+
+**Open Source Hybrid Agent Architecture for Mistral Vibe**
+
+This project provides a complete hybrid agent system that combines:
 
 - **Primary Agent**: Mistral API (`devstral-medium-latest`) for complex reasoning
 - **Worker Agent**: Local LLM (Mistral-3-3B) for tool calls and simple tasks
+- **Vibe Extension**: Custom commands integrated into Mistral Vibe
+
+## 🌟 Features
+
+✅ **Hybrid Architecture** - Best of both worlds: API quality + local speed
+✅ **Model Management** - Easy worker model switching
+✅ **Mode Toggle** - Switch between hybrid and single-agent modes
+✅ **Vibe Integration** - Custom commands inside Mistral Vibe
+✅ **Open Source Ready** - MIT License, templates, and documentation
+✅ **Modular Design** - Easy to extend and customize
 
 ## Quick Start
 
@@ -97,16 +112,43 @@ The setup includes a model changer script for the worker agent:
 - **Workflow**: One agent handles all tasks
 - **Use Case**: When Mistral API is unavailable or for simpler projects
 
-## Files
+## 📁 Project Structure
 
-- `setup_mistral_vibe.sh` - Main setup script
-- `start_vllm.sh` - Worker server start script
-- `change_worker_model.sh` - Model management script
-- `toggle_hybrid_mode.sh` - Mode toggle script
-- `vibe-extended` - Extended Vibe with custom commands
-- `load_vibe_extensions.py` - Vibe extension loader
-- `vibe_custom_commands.py` - Custom command implementations
-- `~/.config/mistral_vibe/` - Configuration and agent prompts
+```
+mistral-vibe-hybrid/
+├── agent_templates/              # 📝 Agent prompt templates (modular)
+│   ├── hybrid_primary.md.template
+│   ├── hybrid_worker.md.template
+│   └── single_agent.md.template
+├── config/                       # ⚙️ Configuration files
+│   └── setup_config.json         # Project configuration
+├── agent_templates/              # 📝 Agent prompt templates
+├── scripts/                      # 🎬 Management scripts
+│   ├── setup_mistral_vibe.sh      # 🎯 Main setup (31KB)
+│   ├── start_vllm.sh             # 🚀 Worker server (660B)
+│   ├── change_worker_model.sh    # 🔄 Model management (3.8KB)
+│   └── toggle_hybrid_mode.sh     # ⚡ Mode toggle (7.5KB)
+├── src/                          # 🐍 Python extensions
+│   ├── vibe_custom_commands.py   # 🤖 Command implementations (7.2KB)
+│   └── load_vibe_extensions.py   # 🔌 Extension loader (1.7KB)
+├── vibe-extended                 # 🎛️ Extended Vibe wrapper
+├── LICENSE                       # 📄 MIT License
+├── CONTRIBUTING.md               # 🤝 Contribution guide
+└── README.md                     # 📖 This documentation
+
+Runtime config: ~/.config/mistral_vibe/
+Model storage: ~/models/
+```
+
+## 🎯 Open Source Ready
+
+This project is designed for open source contribution:
+
+- **MIT License** - Permissive open source license
+- **Modular Templates** - Easy to customize agent prompts
+- **Configuration File** - Centralized settings management
+- **Contribution Guide** - Clear contribution process
+- **Documentation** - Comprehensive setup and usage guides
 
 ## Requirements
 

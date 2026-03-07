@@ -319,14 +319,22 @@ cat > "$CONFIG_DIR/config.json" << 'CONFIGEOF'
 CONFIGEOF
 
 # ---------------------------------------------------------------------------
-# 4. Create agent prompts (primary + worker)
+# 4. Create agent prompts from templates
 # ---------------------------------------------------------------------------
-info "Creating agent prompts..."
+info "Creating agent prompts from templates..."
 
 mkdir -p "$CONFIG_DIR/agents"
 
-# --- Primary Agent (Mistral API) ---
-cat > "$CONFIG_DIR/agents/mistral-vibe.md" << 'PRIMARYEOF'
+# Use template files if available, otherwise use embedded templates
+HYBRID_PRIMARY_TEMPLATE="$PROJECT_ROOT/agent_templates/hybrid_primary.md.template"
+HYBRID_WORKER_TEMPLATE="$PROJECT_ROOT/agent_templates/hybrid_worker.md.template"
+
+if [ -f "$HYBRID_PRIMARY_TEMPLATE" ]; then
+    info "Using hybrid primary template from $HYBRID_PRIMARY_TEMPLATE"
+    cp "$HYBRID_PRIMARY_TEMPLATE" "$CONFIG_DIR/agents/mistral-vibe.md"
+else
+    info "Using embedded hybrid primary template"
+    cat > "$CONFIG_DIR/agents/mistral-vibe.md" << 'PRIMARYEOF'
 ---
 description: "Mistral Vibe primary agent for complex tasks"
 mode: primary
@@ -369,9 +377,14 @@ The project root is "__PROJECT_ROOT__". Use absolute paths starting with this pr
 # Project-specific commands will be added here during setup
 ```
 PRIMARYEOF
+fi
 
-# --- Worker Agent (Local LLM) ---
-cat > "$CONFIG_DIR/agents/worker.md" << 'WORKEREOF'
+if [ -f "$HYBRID_WORKER_TEMPLATE" ]; then
+    info "Using hybrid worker template from $HYBRID_WORKER_TEMPLATE"
+    cp "$HYBRID_WORKER_TEMPLATE" "$CONFIG_DIR/agents/worker.md"
+else
+    info "Using embedded hybrid worker template"
+    cat > "$CONFIG_DIR/agents/worker.md" << 'WORKEREOF'
 ---
 description: "Local worker agent for focused tasks"
 mode: subagent
@@ -414,6 +427,7 @@ The project root is "__PROJECT_ROOT__". ALWAYS use absolute paths.
 # Use commands provided by primary agent
 ```
 WORKEREOF
+fi
 
 # ---------------------------------------------------------------------------
 # 5. Replace project root placeholder in both agent files

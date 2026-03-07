@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "project_name": "Mistral Vibe Hybrid Setup",
+  "description": "Hybrid agent architecture with Mistral API + Local LLM",
+  
+  "default_settings": {
+    "models_dir": "$HOME/models",
+    "config_dir": "$HOME/.config/mistral_vibe",
+    "default_worker_model": "Mistral-3-3B-Instruct-2512-Q4_K_M.gguf",
+    "vllm_port": 8000,
+    "mistral_api_model": "devstral-medium-latest"
+  },
+  
+  "agent_templates": {
+    "hybrid_primary": "agent_templates/hybrid_primary.md.template",
+    "hybrid_worker": "agent_templates/hybrid_worker.md.template",
+    "single_agent": "agent_templates/single_agent.md.template"
+  },
+  
+  "features": {
+    "auto_download_models": true,
+    "hybrid_mode_support": true,
+    "model_management": true,
+    "vibe_extension": true
+  },
+  
+  "open_source": {
+    "license": "MIT",
+    "author": "Mistral Vibe Setup",
+    "repository": "https://github.com/your-repo/mistral-vibe-hybrid",
+    "contributing": "Contributions welcome!"
+  }
+}
