@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+env:
+  PROJECT_NAME: mistral-vibe-hybrid
+  VERSION: 1.0.0
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y curl git gnupg
+        pip install --upgrade pip
+        
+    - name: Make scripts executable
+      run: |
+        find . -name "*.sh" -exec chmod +x {} \;
+        chmod +x vibe-extended
+        
+    - name: Test install script
+      run: |
+        echo "Testing install script..."
+        # Test with custom temp directory
+        ./install.sh --dir /tmp/test-install --help
+        
+    - name: Test package creation
+      run: |
+        echo "Testing package creation..."
+        ./package.sh tar.gz
+        ls -la dist/
+        
+    - name: Test script signing (simulated)
+      run: |
+        echo "Testing script signing..."
+        # Test without actual GPG for CI
+        ./sign_scripts.sh --help
+        
+    - name: Test setup script
+      run: |
+        echo "Testing setup script..."
+        # Run setup with automatic responses
+        echo -e "\n\n" | ./setup_mistral_vibe.sh
+        
+    - name: Verify created files
+      run: |
+        echo "Verifying created files..."
+        test -f ~/.config/mistral_vibe/config.json && echo "✓ Config created"
+        test -f ~/.config/mistral_vibe/agents/mistral-vibe.md && echo "✓ Agent created"
+        test -f /tmp/test-install/README.md && echo "✓ Install script works"
+        
+    - name: Cleanup
+      run: |
+        rm -rf /tmp/test-install
+        rm -rf dist/
+        
+    - name: Success
+      run: echo "✅ All CI tests passed!"

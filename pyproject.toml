@@ -1,0 +1,82 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "coverage>=7.0",
+    "mypy>=1.0",
+    "ruff>=0.1",
+    "black>=23.0",
+    "types-requests",
+]
+
+[project]
+name = "mistral-vibe-hybrid"
+version = "1.0.0"
+description = "Hybrid agent architecture for Mistral Vibe"
+authors = [{name = "Mistral Vibe Setup", email = "your-email@example.com"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+
+[tool.setuptools]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+addopts = "--verbose --cov=src --cov-report=term-missing --cov-report=html:tests/coverage/html"
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+omit = ["*/tests/*", "*/__pycache__/*", "*/.venv/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+follow_imports = "silent"
+strict_optional = true
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "I", "B", "C4", "UP", "YTT"]
+ignore = ["E501"]
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "coverage>=7.0",
+    "mypy>=1.0",
+    "ruff>=0.1",
+    "black>=23.0",
+    "types-requests",
+]
+
+dev = [
+    "mistral-vibe-hybrid[test]",
+    "ipython",
+    "ipdb",
+]

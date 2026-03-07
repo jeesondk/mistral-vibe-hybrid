@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Custom commands for Mistral Vibe extension
 This module adds /use_hybrid_mode and /change_worker_model commands to Vibe
@@ -8,7 +7,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 # Add the custom commands to Vibe's command registry
 

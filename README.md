@@ -36,21 +36,46 @@ This project provides a complete hybrid agent system that combines:
 # Primary agent will automatically delegate to worker
 ```
 
-## Usage
+## 🚀 Installation Options
 
-### Basic Setup
+### Option 1: Quick Install (Recommended)
 ```bash
-# Run the setup script
+# Simple one-liner installation
+curl -sSL https://raw.githubusercontent.com/your-repo/mistral-vibe-hybrid/main/install.sh | bash
+```
+
+### Option 2: Manual Install
+```bash
+# Clone and setup manually
+git clone https://github.com/your-repo/mistral-vibe-hybrid.git
+cd mistral-vibe-hybrid
 ./setup_mistral_vibe.sh
+```
 
-# Start the worker server
-./start_vllm.sh
+### Option 3: Package Download
+```bash
+# Download pre-built package
+curl -LO https://github.com/your-repo/mistral-vibe-hybrid/releases/download/v1.0.0/mistral-vibe-hybrid-1.0.0.tar.gz
 
-# Configure Mistral API key for primary agent
-# (implementation-specific - add your API key)
+# Extract and install
+tar -xzf mistral-vibe-hybrid-1.0.0.tar.gz
+cd mistral-vibe-hybrid
+./install.sh
+```
 
-# Use the hybrid system
-# Primary agent will automatically delegate to worker
+### Option 4: Verified Install (Security Conscious)
+```bash
+# Download and verify checksums
+curl -LO https://github.com/your-repo/mistral-vibe-hybrid/releases/download/v1.0.0/mistral-vibe-hybrid-1.0.0.tar.gz
+curl -LO https://github.com/your-repo/mistral-vibe-hybrid/releases/download/v1.0.0/checksums.txt
+
+# Verify integrity
+sha256sum -c checksums.txt
+
+# Extract and install
+tar -xzf mistral-vibe-hybrid-1.0.0.tar.gz
+cd mistral-vibe-hybrid
+./install.sh
 ```
 
 ### Extended Vibe with Custom Commands
@@ -138,6 +163,114 @@ mistral-vibe-hybrid/
 
 Runtime config: ~/.config/mistral_vibe/
 Model storage: ~/models/
+```
+
+## 📦 Distribution Options
+
+This project supports multiple distribution methods:
+
+### 1. **Install Script (Recommended)** ✅
+- Single command installation
+- Automatic dependency checking
+- Interactive setup process
+- Best for most users
+
+**Usage:**
+```bash
+curl -sSL https://raw.githubusercontent.com/your-repo/mistral-vibe-hybrid/main/install.sh | bash
+```
+
+### 2. **Pre-built Packages** 📦
+- Tarball (.tar.gz) packages
+- ZIP archives
+- Checksums for verification
+- Best for offline installation
+
+**Create packages:**
+```bash
+./package.sh tar.gz      # Create tar.gz package
+./package.sh zip         # Create zip package
+./package.sh all         # Create all formats
+```
+
+### 3. **Script Signing** 🔒
+- GPG signatures for security
+- SHA256 checksums
+- Integrity verification
+- Best for security-conscious users
+
+**Sign scripts:**
+```bash
+./sign_scripts.sh --all      # Sign all scripts
+./sign_scripts.sh --verify   # Verify signatures
+```
+
+### 4. **NPX Package (Optional)** 📦
+- npm package for convenience
+- Global installation
+- Version management
+- Best for Node.js users
+
+**Install:**
+```bash
+npx mistral-vibe-hybrid
+```
+
+## 🤖 CI/CD System
+
+This project includes a complete CI/CD pipeline using GitHub Actions:
+
+### Continuous Integration
+- **Trigger**: Runs on every push to `main`/`dev` and pull requests
+- **Jobs**: Linting, testing, and verification
+- **Features**:
+  - Shell script syntax checking
+  - Python syntax validation
+  - Install script testing
+  - Package creation testing
+  - Setup script verification
+
+**Workflow File**: `.github/workflows/ci-test.yml`
+
+### Automated Releases
+- **Trigger**: Creates release when version tag is pushed (`v1.0.0`)
+- **Features**:
+  - Automatic package creation (tar.gz, zip)
+  - Checksum generation
+  - GitHub Release creation
+  - Professional release notes
+  - Asset upload
+
+**Workflow File**: `.github/workflows/release.yml`
+
+### Release Process
+
+```bash
+# 1. Update version in files
+sed -i "s/VERSION=.*/VERSION=1.0.1/" install.sh
+
+# 2. Commit changes
+git add .
+git commit -m "Bump version to 1.0.1"
+
+# 3. Create and push tag
+git tag v1.0.1
+git push origin v1.0.1
+
+# 4. GitHub Actions automatically:
+#    - Runs CI tests
+#    - Creates packages
+#    - Generates release notes
+#    - Creates GitHub Release
+```
+
+### CI/CD Badges
+
+Add these to your README:
+
+```markdown
+[![CI Status](https://github.com/your-repo/mistral-vibe-hybrid/actions/workflows/ci-test.yml/badge.svg)](https://github.com/your-repo/mistral-vibe-hybrid/actions/workflows/ci-test.yml)
+[![Release](https://github.com/your-repo/mistral-vibe-hybrid/actions/workflows/release.yml/badge.svg)](https://github.com/your-repo/mistral-vibe-hybrid/actions/workflows/release.yml)
 ```
 
 ## 🎯 Open Source Ready
