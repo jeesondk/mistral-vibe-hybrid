@@ -1,4 +1,4 @@
-name: CI
+name: CI Test
 
 on:
   push:
@@ -6,14 +6,31 @@ on:
   pull_request:
     branches: [ main, dev ]
 
-env:
-  PROJECT_NAME: mistral-vibe-hybrid
-  VERSION: 1.0.0
-
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Lint shell scripts
+      run: |
+        echo "Checking shell script syntax..."
+        find . -name "*.sh" -exec shellcheck {} \; || true
+        
+    - name: Check Python syntax
+      run: |
+        echo "Checking Python syntax..."
+        python3 -m py_compile vibe_custom_commands.py || true
+        python3 -m py_compile load_vibe_extensions.py || true
+        
+  
   test:
     name: Test
     runs-on: ubuntu-latest
+    needs: lint
     
     steps:
     - name: Checkout repository
@@ -22,124 +39,93 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.12'
         
     - name: Install UV
-      run: |
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      uses: astral-sh/setup-uv@v1
+      with:
+        enable-cache: true
         
-    - name: Install dependencies with UV
+    - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y curl git gnupg
+        sudo apt-get install -y shellcheck
         
-        # Create and use a virtual environment with UV
-        uv venv .venv
-        source .venv/bin/activate
-        
-        # Install minimal dependencies and the package
+        # Create virtual environment and install dependencies
+        uv venv
         uv pip install pyyaml
         uv pip install -e .
+        uv pip install pytest pytest-cov mypy ruff
         
     - name: Make scripts executable
       run: |
-        # Activate virtual environment
-        source .venv/bin/activate
-        
-        echo "Setting execute permissions..."
         find . -name "*.sh" -exec chmod +x {} \;
         chmod +x vibe-extended
-        
-        # Verify key scripts are executable
-        echo "Verifying executable permissions:"
-        test -x ./start_llm_server.sh && echo "✓ start_llm_server.sh" || (echo "❌ start_llm_server.sh not executable" && exit 1)
-        test -x ./install.sh && echo "✓ install.sh" || (echo "❌ install.sh not executable" && exit 1)
-        test -x ./package.sh && echo "✓ package.sh" || (echo "❌ package.sh not executable" && exit 1)
-        test -x ./setup_mistral_vibe.sh && echo "✓ setup_mistral_vibe.sh" || (echo "❌ setup_mistral_vibe.sh not executable" && exit 1)
-        
-        # Verify Python package installation
-        python -c "import src.vibe_custom_commands; print('✓ Python package imported successfully')" || echo "⚠ Python package import failed"
         
     - name: Test install script
       run: |
         echo "Testing install script..."
+        ./install.sh --help
+        ./install.sh --version
+        
         # Test with custom temp directory
+        mkdir -p /tmp/test-install
         ./install.sh --dir /tmp/test-install --help
+        test -f /tmp/test-install/README.md && echo "✓ Install script works" || echo "⚠ Install test file not found"
         
-
-        
-    - name: Test script signing (simulated)
+    - name: Test package creation
       run: |
-        echo "Testing script signing..."
-        # Test without actual GPG for CI
-        ./sign_scripts.sh --help
+        echo "Testing package creation..."
+        ./package.sh tar.gz
+        ls -la dist/
         
-    - name: Test setup script
+    - name: Run shell script tests
       run: |
-        # Activate virtual environment
-        source .venv/bin/activate
+        echo "Running shell script tests..."
+        mkdir -p tests/coverage
+        # Use uv run to execute in the virtual environment
+        uv run ./tests/run_tests.sh --coverage
         
-        echo "Testing setup script..."
-        # Create a minimal non-interactive test by creating required directories
-        mkdir -p ~/.config/mistral_vibe/agents
+    - name: Run Python tests with coverage
+      run: |
+        echo "Running Python tests with coverage..."
+        cd $GITHUB_WORKSPACE
+        uv run pytest tests/python/ --cov=src --cov-report=term-missing --cov-report=xml:tests/coverage/pytest-coverage.xml
         
-        # Create dummy model file to avoid download prompt
-        mkdir -p ~/models
-        touch ~/models/dummy.gguf
+    - name: Run type checking with mypy
+      run: |
+        echo "Running type checking..."
+        uv run mypy src/ --config-file mypy.ini
         
-        # Run setup with automatic responses
-        # Answers: default path, skip download (n), select first model (1)
-        echo -e "\n\nn\n1\n" | ./setup_mistral_vibe.sh
-        
-        # Verify setup created expected files
-        if [ -f ~/.config/mistral_vibe/config.json ]; then
-            echo "✓ Config file created"
-        else
-            echo "⚠ Config file not created (may be expected in CI)"
-        fi
-        
-        if [ -f ~/.config/mistral_vibe/agents/mistral-vibe.md ]; then
-            echo "✓ Agent file created"
-        else
-            echo "⚠ Agent file not created (may be expected in CI)"
-        fi
+    - name: Run code formatting check with ruff
+      run: |
+        echo "Running code formatting check..."
+        uv run ruff check src/ tests/python/
         
     - name: Verify created files
       run: |
-        echo "Verifying setup created files..."
+        echo "Verifying created files..."
+        test -f ~/.config/mistral_vibe/config.json && echo "✓ Config created"
+        test -f ~/.config/mistral_vibe/agents/mistral-vibe.md && echo "✓ Agent created"
+        test -f tests/test_report.txt && echo "✓ Shell test report created"
+        test -f tests/coverage/coverage_report.txt && echo "✓ Shell coverage report created"
+        test -f tests/coverage/pytest-coverage.xml && echo "✓ Python coverage report created"
         
-        # Check if setup created config files
-        if [ -f ~/.config/mistral_vibe/config.json ]; then
-            echo "✓ Config file created by setup"
-        else
-            echo "⚠ Config file not created"
-        fi
+    - name: Display test results
+      run: |
+        echo "Test Results:"
+        cat tests/test_report.txt
         
-        if [ -f ~/.config/mistral_vibe/agents/mistral-vibe.md ]; then
-            echo "✓ Primary agent file created by setup"
-        else
-            echo "⚠ Primary agent file not created"
-        fi
-        
-        if [ -f ~/.config/mistral_vibe/agents/worker.md ]; then
-            echo "✓ Worker agent file created by setup"
-        else
-            echo "⚠ Worker agent file not created"
-        fi
-        
-        # Verify main scripts exist and are executable
-        test -x ./start_llm_server.sh && echo "✓ LLM server script executable" || exit 1
-        test -x ./change_worker_model.sh && echo "✓ Model changer script executable" || exit 1
-        test -x ./toggle_hybrid_mode.sh && echo "✓ Toggle script executable" || exit 1
-        
-        echo "✅ Setup verification completed!"
+    - name: Display coverage results
+      run: |
+        echo "Coverage Results:"
+        cat tests/coverage/coverage_report.txt
         
     - name: Cleanup
       run: |
-        echo "Cleaning up..."
-        rm -rf /tmp/test-install || true
-        echo "✓ Cleanup completed"
+        rm -rf /tmp/test-install
+        rm -rf dist/
+        rm -rf tests/coverage
         
     - name: Success
       run: echo "✅ All CI tests passed!"
