@@ -36,11 +36,11 @@ mkdir -p "$OUTPUT_DIR"
 create_package() {
     local format="$1"
     local output_file=""
-    
+
     case "$format" in
         "tar.gz"|"tgz")
             output_file="$OUTPUT_DIR/${PROJECT_NAME}-${VERSION}-${PACKAGE_DATE}.tar.gz"
-            info "Creating tar.gz package: $output_file"
+            info "Creating tar.gz package: $output_file" >&2
             
             # Create temporary directory structure
             local temp_dir=$(mktemp -d)
@@ -59,12 +59,12 @@ create_package() {
             tar -czf "$output_file" -C "$temp_dir" "${PROJECT_NAME}-${VERSION}"
             
             rm -rf "$temp_dir"
-            info "✓ tar.gz package created: $output_file"
+            info "✓ tar.gz package created: $output_file" >&2
             ;;
-        
+
         "zip")
             output_file="$OUTPUT_DIR/${PROJECT_NAME}-${VERSION}-${PACKAGE_DATE}.zip"
-            info "Creating zip package: $output_file"
+            info "Creating zip package: $output_file" >&2
             
             # Create temporary directory structure
             local temp_dir=$(mktemp -d)
@@ -83,24 +83,24 @@ create_package() {
             (cd "$temp_dir" && zip -r "$output_file" "${PROJECT_NAME}-${VERSION}")
             
             rm -rf "$temp_dir"
-            info "✓ zip package created: $output_file"
+            info "✓ zip package created: $output_file" >&2
             ;;
-        
+
         "sign")
             # First create a tar.gz package
             create_package "tar.gz"
             local tar_file="$OUTPUT_DIR/${PROJECT_NAME}-${VERSION}-${PACKAGE_DATE}.tar.gz"
             local sig_file="${tar_file}.sig"
             
-            info "Signing package (simulated - implement with GPG)..."
+            info "Signing package (simulated - implement with GPG)..." >&2
             
             # In a real implementation, you would use:
             # gpg --detach-sign --armor "$tar_file"
             
             # For now, create a placeholder signature file
             echo "SIMULATED-SIGNATURE-FOR-$tar_file" > "$sig_file"
-            warn "⚠️  Signature is simulated. Implement real GPG signing."
-            info "✓ Signed package created: $sig_file"
+            warn "⚠️  Signature is simulated. Implement real GPG signing." >&2
+            info "✓ Signed package created: $sig_file" >&2
             ;;
         
         *)

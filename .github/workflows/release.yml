@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'  # Trigger on version tags (v1.0.0, etc.)
+      - 'v*'
 
 env:
   PROJECT_NAME: mistral-vibe-hybrid
@@ -12,98 +12,50 @@ jobs:
   build:
     name: Build Release
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.12'
-        
+
     - name: Install UV
+      uses: astral-sh/setup-uv@v1
+      with:
+        enable-cache: true
+
+    - name: Install dependencies
       run: |
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-        
-    - name: Install dependencies with UV
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y curl git gnupg
-        
-        # Create and use a virtual environment with UV
-        uv venv .venv
-        source .venv/bin/activate
-        
-        # Install minimal dependencies and the package
+        uv venv
         uv pip install pyyaml
         uv pip install -e .
-        
+
     - name: Extract version from tag
       id: version
       run: |
-        # Extract version from tag (v1.0.0 -> 1.0.0)
         VERSION=${GITHUB_REF#refs/tags/v}
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-        echo "Detected version: $VERSION"
-        
+
     - name: Make scripts executable
       run: |
-        # Activate virtual environment
-        source .venv/bin/activate
-        
         find . -name "*.sh" -exec chmod +x {} \;
         chmod +x vibe-extended
-        
+
     - name: Create packages
-      run: |
-        # Activate virtual environment
-        source .venv/bin/activate
-        
-        echo "Creating release packages..."
-        ./package.sh all --checksums
-        ls -la dist/
-        
-    - name: Create release notes
-      id: release_notes
-      run: |
-        echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
-        echo "🚀 Mistral Vibe Hybrid Setup v${{ steps.version.outputs.VERSION }}" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "## What's New" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "- Hybrid agent architecture (Mistral API + Local LLM)" >> $GITHUB_OUTPUT
-        echo "- Vibe extension with custom commands" >> $GITHUB_OUTPUT
-        echo "- Model management system" >> $GITHUB_OUTPUT
-        echo "- Mode toggle (hybrid/single)" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "## Installation" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "```bash" >> $GITHUB_OUTPUT
-        echo "curl -sSL https://raw.githubusercontent.com/your-repo/mistral-vibe-hybrid/main/install.sh | bash" >> $GITHUB_OUTPUT
-        echo "```" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "## Downloads" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "- [tar.gz package](https://github.com/jeesondk/mistral-vibe-hybrid/releases/download/v${{ steps.version.outputs.VERSION }}/${{ env.PROJECT_NAME }}-${{ steps.version.outputs.VERSION }}-$(date +%Y%m%d).tar.gz)" >> $GITHUB_OUTPUT
-        echo "- [zip package](https://github.com/jeesondk/mistral-vibe-hybrid/releases/download/v${{ steps.version.outputs.VERSION }}/${{ env.PROJECT_NAME }}-${{ steps.version.outputs.VERSION }}-$(date +%Y%m%d).zip)" >> $GITHUB_OUTPUT
-        echo "- [checksums.txt](https://github.com/jeesondk/mistral-vibe-hybrid/releases/download/v${{ steps.version.outputs.VERSION }}/checksums.txt)" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
-        
+      run: ./package.sh all --checksums
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         name: v${{ steps.version.outputs.VERSION }}
         tag_name: v${{ steps.version.outputs.VERSION }}
-        body: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
+        generate_release_notes: true
         files: |
           dist/${{ env.PROJECT_NAME }}-${{ steps.version.outputs.VERSION }}-*.tar.gz
           dist/${{ env.PROJECT_NAME }}-${{ steps.version.outputs.VERSION }}-*.zip
           dist/checksums.txt
         draft: false
         prerelease: false
-        
-    - name: Success
-      run: echo "✅ Release v${{ steps.version.outputs.VERSION }} created successfully!"
