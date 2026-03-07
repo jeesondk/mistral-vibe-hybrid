@@ -73,9 +73,9 @@ jobs:
         echo "" >> $GITHUB_OUTPUT
         echo "## Downloads" >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
-        echo "- [tar.gz package](https://github.com/your-repo/mistral-vibe-hybrid/releases/download/v${{ steps.version.outputs.VERSION }}/${{ env.PROJECT_NAME }}-${{ steps.version.outputs.VERSION }}-$(date +%Y%m%d).tar.gz)" >> $GITHUB_OUTPUT
-        echo "- [zip package](https://github.com/your-repo/mistral-vibe-hybrid/releases/download/v${{ steps.version.outputs.VERSION }}/${{ env.PROJECT_NAME }}-${{ steps.version.outputs.VERSION }}-$(date +%Y%m%d).zip)" >> $GITHUB_OUTPUT
-        echo "- [checksums.txt](https://github.com/your-repo/mistral-vibe-hybrid/releases/download/v${{ steps.version.outputs.VERSION }}/checksums.txt)" >> $GITHUB_OUTPUT
+        echo "- [tar.gz package](https://github.com/jeesondk/mistral-vibe-hybrid/releases/download/v${{ steps.version.outputs.VERSION }}/${{ env.PROJECT_NAME }}-${{ steps.version.outputs.VERSION }}-$(date +%Y%m%d).tar.gz)" >> $GITHUB_OUTPUT
+        echo "- [zip package](https://github.com/jeesondk/mistral-vibe-hybrid/releases/download/v${{ steps.version.outputs.VERSION }}/${{ env.PROJECT_NAME }}-${{ steps.version.outputs.VERSION }}-$(date +%Y%m%d).zip)" >> $GITHUB_OUTPUT
+        echo "- [checksums.txt](https://github.com/jeesondk/mistral-vibe-hybrid/releases/download/v${{ steps.version.outputs.VERSION }}/checksums.txt)" >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
         
