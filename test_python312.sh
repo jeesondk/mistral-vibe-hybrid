@@ -35,7 +35,7 @@ run_test() {
     
     info "Testing: $test_name"
     
-    if eval "$test_command" 2>/dev/null | grep -q "$expected"; then
+    if bash -c "$test_command" 2>/dev/null | grep -q "$expected"; then
         PASSED_TESTS=$((PASSED_TESTS + 1))
         success "✅ PASS: $test_name"
         return 0

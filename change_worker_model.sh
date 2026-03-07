@@ -18,6 +18,9 @@ info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
+# Escape a string for use as a sed replacement
+sed_escape() { printf '%s\n' "$1" | sed 's/[&/\]/\\&/g'; }
+
 # Check if running as command or interactive
 if [[ "$1" == "--list" ]]; then
     # List available models
@@ -146,7 +149,8 @@ fi
 
 # Update start script with new model
 info "Updating start script..."
-sed -i "s|MODEL_PATH=".*"|MODEL_PATH=\"$selected_model\"|" "$PROJECT_ROOT/start_llm_server.sh"
+escaped_model=$(sed_escape "$selected_model")
+sed -i "s|MODEL_PATH=\".*\"|MODEL_PATH=\"$escaped_model\"|" "$PROJECT_ROOT/start_llm_server.sh"
 
 # Update configuration to reference the new model name
 info "Updating configuration..."

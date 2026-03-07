@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 # ============================================================================
 # Mistral Vibe Hybrid Setup - Test Runner
@@ -19,7 +19,8 @@ NC='\033[0m'
 
 info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+error() { echo -e "${RED}[ERROR]${NC} $1"; }
+fatal() { echo -e "${RED}[FATAL]${NC} $1"; exit 1; }
 
 # Configuration
 TEST_DIR="$(dirname "$0")"
@@ -53,7 +54,7 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         *)
-            error "Unknown option: $1"
+            fatal "Unknown option: $1"
             ;;
     esac
 done
@@ -83,7 +84,7 @@ run_test() {
     # Run test and capture output
     local start_time=$(date +%s%N)
     
-    if eval "$test_command" > "$test_file" 2>&1; then
+    if bash -c "$test_command" > "$test_file" 2>&1; then
         local end_time=$(date +%s%N)
         local duration=$(( (end_time - start_time) / 1000000 )) # milliseconds
         
@@ -107,7 +108,7 @@ run_test() {
         echo "" >> "$TEST_REPORT"
         
         if [ "$VERBOSE" = true ]; then
-            error "Test failed: $test_name"
+            warn "Test failed: $test_name"
         fi
         
         return 1
@@ -155,12 +156,12 @@ run_tests() {
     
     # Test 8: Python syntax - vibe_custom_commands.py
     run_test "Python syntax: vibe_custom_commands.py" \
-        "python3 -m py_compile $PROJECT_ROOT/vibe_custom_commands.py" \
+        "python3 -m py_compile $PROJECT_ROOT/src/vibe_custom_commands.py" \
         "$COVERAGE_DIR/test_python_vibe_commands.txt"
     
     # Test 9: Python syntax - load_vibe_extensions.py
     run_test "Python syntax: load_vibe_extensions.py" \
-        "python3 -m py_compile $PROJECT_ROOT/load_vibe_extensions.py" \
+        "python3 -m py_compile $PROJECT_ROOT/src/load_vibe_extensions.py" \
         "$COVERAGE_DIR/test_python_extensions.txt"
     
     # Test 10: Shellcheck on all scripts
@@ -344,6 +345,7 @@ main() {
     
     if [ "$FAILED_TESTS" -gt 0 ]; then
         error "Some tests failed. See $TEST_REPORT for details."
+        return 1
     fi
     
     collect_coverage

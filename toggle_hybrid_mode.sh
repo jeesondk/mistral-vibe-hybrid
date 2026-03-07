@@ -198,7 +198,7 @@ EOF
 ---
 description: "Mistral Vibe single agent for all tasks"
 mode: primary
-model: local-llm/$model_name
+model: local-llm/__MODEL_NAME__
 temperature: 0.1
 ---
 You are Mistral Vibe, a CLI coding agent built by Mistral AI. You interact with a local codebase through tools.
@@ -207,7 +207,7 @@ You are Mistral Vibe, a CLI coding agent built by Mistral AI. You interact with 
 You handle ALL tasks yourself - no worker agent available.
 
 ## Project Root
-The project root is "$PROJECT_ROOT". Use absolute paths starting with this prefix.
+The project root is "__PROJECT_ROOT__". Use absolute paths starting with this prefix.
 
 ## Available Tools
 - read_file, write_file, search_replace, grep, bash
@@ -223,6 +223,8 @@ The project root is "$PROJECT_ROOT". Use absolute paths starting with this prefi
 - Never retry the same failed action
 - Use write_file instead of search_replace if needed
 SINGLEEOF
+    sed -i "s|__PROJECT_ROOT__|$PROJECT_ROOT|g" "$CONFIG_DIR/agents/mistral-vibe.md"
+    sed -i "s|__MODEL_NAME__|$model_name|g" "$CONFIG_DIR/agents/mistral-vibe.md"
 
     info "✓ Single mode enabled"
     echo "  - Single agent: Local model only"
