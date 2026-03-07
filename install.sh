@@ -112,7 +112,7 @@ install_project() {
     echo ""
     echo "Next steps:"
     echo "  1. cd $INSTALL_DIR"
-    echo "  2. ./start_vllm.sh              # Start worker server"
+    echo "  2. ./start_llm_server.sh       # Start multi-backend LLM server"
     echo "  3. ./vibe-extended             # Launch extended Vibe"
     echo ""
     echo "Documentation:"

@@ -31,16 +31,56 @@ if [[ "$1" == "--list" ]]; then
     exit 0
 fi
 
-# Find running vLLM server
-find_vllm_pid() {
-    # Try to find vLLM process
+# Find running LLM server (vLLM, llama.cpp, or ollama)
+find_llm_pid() {
     local pid=""
+    
+    # Try to find vLLM process
     if command -v pgrep >/dev/null 2>&1; then
         pid=$(pgrep -f "vllm.entrypoints.openai.api_server" || true)
+        if [ -n "$pid" ]; then
+            echo "$pid"
+            return
+        fi
     else
         pid=$(ps aux | grep "vllm.entrypoints.openai.api_server" | grep -v grep | awk '{print $2}' || true)
+        if [ -n "$pid" ]; then
+            echo "$pid"
+            return
+        fi
     fi
-    echo "$pid"
+    
+    # Try to find llama.cpp server process
+    if command -v pgrep >/dev/null 2>&1; then
+        pid=$(pgrep -f "llama-server" || true)
+        if [ -n "$pid" ]; then
+            echo "$pid"
+            return
+        fi
+    else
+        pid=$(ps aux | grep "llama-server" | grep -v grep | awk '{print $2}' || true)
+        if [ -n "$pid" ]; then
+            echo "$pid"
+            return
+        fi
+    fi
+    
+    # Try to find ollama process
+    if command -v pgrep >/dev/null 2>&1; then
+        pid=$(pgrep -f "ollama serve" || true)
+        if [ -n "$pid" ]; then
+            echo "$pid"
+            return
+        fi
+    else
+        pid=$(ps aux | grep "ollama serve" | grep -v grep | awk '{print $2}' || true)
+        if [ -n "$pid" ]; then
+            echo "$pid"
+            return
+        fi
+    fi
+    
+    echo ""
 }
 
 # Main logic
@@ -65,7 +105,7 @@ if [ $# -eq 0 ]; then
     echo ""
     
     # Get current model from start script
-    current_model=$(grep -oP 'MODEL_PATH="\K[^"]+' "$PROJECT_ROOT/start_vllm.sh" 2>/dev/null || echo "None")
+    current_model=$(grep -oP 'MODEL_PATH="\K[^"]+' "$PROJECT_ROOT/start_llm_server.sh" 2>/dev/null || echo "None")
     if [ "$current_model" != "None" ]; then
         current_name=$(basename "$current_model")
         echo "Current model: $current_name"
@@ -92,27 +132,31 @@ fi
 model_name=$(basename "$selected_model")
 info "Changing worker model to: $model_name"
 
-# Check if vLLM server is running
-vllm_pid=$(find_vllm_pid)
-if [ -n "$vllm_pid" ]; then
-    info "Stopping current vLLM server (PID: $vllm_pid)..."
-    kill "$vllm_pid" || warn "Failed to stop vLLM server, continuing anyway..."
+# Check if LLM server is running
+llm_pid=$(find_llm_pid)
+if [ -n "$llm_pid" ]; then
+    info "Stopping current LLM server (PID: $llm_pid)..."
+    kill "$llm_pid" || warn "Failed to stop LLM server, continuing anyway..."
     sleep 2
 fi
 
 # Update start script with new model
 info "Updating start script..."
-sed -i "s|MODEL_PATH=".*"|MODEL_PATH=\"$selected_model\"|" "$PROJECT_ROOT/start_vllm.sh"
+sed -i "s|MODEL_PATH=".*"|MODEL_PATH=\"$selected_model\"|" "$PROJECT_ROOT/start_llm_server.sh"
 
 # Update configuration to reference the new model name
 info "Updating configuration..."
 sed -i "s|mistral-3-3b-worker|${model_name%.gguf}-worker|g" "$CONFIG_DIR/config.json"
 sed -i "s|mistral-3-3b-worker|${model_name%.gguf}-worker|g" "$CONFIG_DIR/agents/worker.md"
 
-# Restart vLLM server
-info "Restarting vLLM server with new model..."
+# Restart LLM server
+info "Restarting LLM server with new model..."
 cd "$PROJECT_ROOT"
-./start_vllm.sh "$selected_model" &
+
+# Get current backend from start script
+current_backend=$(grep -oP 'BACKEND="\K[^"]+' "$PROJECT_ROOT/start_llm_server.sh" 2>/dev/null || echo "vllm")
+
+./start_llm_server.sh "$current_backend" "$selected_model" &
 
 # Wait a bit for server to start
 sleep 3

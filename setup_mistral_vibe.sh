@@ -224,7 +224,7 @@ print('Download complete!')
 "
         
         # Update the start script to use this model by default
-        sed -i "s|mistral-7b-instruct-v0.2.Q4_K_M.gguf|Mistral-3-3B-Instruct-2512-Q4_K_M.gguf|g" "$PROJECT_ROOT/start_vllm.sh"
+        sed -i "s|mistral-7b-instruct-v0.2.Q4_K_M.gguf|Mistral-3-3B-Instruct-2512-Q4_K_M.gguf|g" "$PROJECT_ROOT/start_llm_server.sh"
     else
         info "Skipping model download. You can manually download models later."
     fi
@@ -438,37 +438,109 @@ sed -i "s|__PROJECT_ROOT__|$PROJECT_ROOT|g" "$CONFIG_DIR/agents/worker.md"
 
 info "Creating start script..."
 
-cat > "$PROJECT_ROOT/start_vllm.sh" << 'STARTSCRIPT'
+cat > "$PROJECT_ROOT/start_llm_server.sh" << 'STARTSCRIPT'
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Start vLLM server for Mistral Vibe
-# Usage: ./start_vllm.sh [MODEL_PATH] [PORT]
+# Start LLM server for Mistral Vibe
+# Supports vLLM, llama.cpp, and ollama backends
+# Usage: ./start_llm_server.sh [BACKEND] [MODEL_PATH] [PORT]
+# Backends: vllm, llamacpp, ollama
 
-MODEL_PATH="${1:-$HOME/models/mistral-7b-instruct-v0.2.Q4_K_M.gguf}"
-PORT="${2:-8000}"
+# Show help if requested
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+    echo "Usage: ./start_llm_server.sh [BACKEND] [MODEL_PATH] [PORT]"
+    echo ""
+    echo "Backends:"
+    echo "  vllm      - Use vLLM (default)"
+    echo "  llamacpp  - Use llama.cpp"
+    echo "  ollama    - Use ollama"
+    echo ""
+    echo "Examples:"
+    echo "  ./start_llm_server.sh vllm /path/to/model.gguf 8000"
+    echo "  ./start_llm_server.sh llamacpp /path/to/model.gguf 8000"
+    echo "  ./start_llm_server.sh ollama mistral:latest 8000"
+    exit 0
+fi
 
-echo "Starting vLLM server..."
+BACKEND="${1:-vllm}"
+MODEL_PATH="${2:-$HOME/models/mistral-7b-instruct-v0.2.Q4_K_M.gguf}"
+PORT="${3:-8000}"
+
+echo "Starting $BACKEND server..."
 echo "Model: $MODEL_PATH"
 echo "Port: $PORT"
 echo ""
 
-# Check if model exists
-if [ ! -f "$MODEL_PATH" ]; then
+# Check if model exists (except for ollama which manages its own models)
+if [ "$BACKEND" != "ollama" ] && [ ! -f "$MODEL_PATH" ]; then
     echo "Error: Model not found at $MODEL_PATH"
     echo "Please download a model first or specify the correct path"
     exit 1
 fi
 
-# Start vLLM server
-python -m vllm.entrypoints.openai.api_server \
-    --model "$MODEL_PATH" \
-    --port "$PORT" \
-    --max-model-len 8192 \
-    --gpu-memory-utilization 0.9
+case "$BACKEND" in
+    vllm)
+        echo "Starting vLLM server..."
+        python -m vllm.entrypoints.openai.api_server \
+            --model "$MODEL_PATH" \
+            --port "$PORT" \
+            --max-model-len 8192 \
+            --gpu-memory-utilization 0.9
+        ;;
+    
+    llamacpp)
+        echo "Starting llama.cpp server..."
+        # Check if llama.cpp server is available
+        if ! command -v llama-server &> /dev/null; then
+            echo "Error: llama-server command not found. Please install llama.cpp first."
+            exit 1
+        fi
+        
+        llama-server \
+            --model "$MODEL_PATH" \
+            --port "$PORT" \
+            --n-gpu-layers 100 \
+            --context-size 8192
+        ;;
+    
+    ollama)
+        echo "Starting ollama server..."
+        # Check if ollama is available
+        if ! command -v ollama &> /dev/null; then
+            echo "Error: ollama command not found. Please install ollama first."
+            exit 1
+        fi
+        
+        # Start ollama server in the background
+        ollama serve &
+        OLLAMA_PID=$!
+        
+        # Wait a bit for server to start
+        sleep 3
+        
+        # Pull the model if not already available
+        if ! ollama list | grep -q "$MODEL_PATH"; then
+            echo "Pulling model $MODEL_PATH..."
+            ollama pull "$MODEL_PATH"
+        fi
+        
+        echo "Ollama server started (PID: $OLLAMA_PID)"
+        echo "Model: $MODEL_PATH is ready to use"
+        
+        # Keep the script running
+        wait $OLLAMA_PID
+        ;;
+    
+    *)
+        echo "Error: Unknown backend '$BACKEND'"
+        echo "Supported backends: vllm, llamacpp, ollama"
+        exit 1
+        ;;
+esac
 STARTSCRIPT
 
-chmod +x "$PROJECT_ROOT/start_vllm.sh"
+chmod +x "$PROJECT_ROOT/start_llm_server.sh"
 
 # ---------------------------------------------------------------------------
 # 6. Create worker model changer script
@@ -543,7 +615,7 @@ if [ $# -eq 0 ]; then
     echo ""
     
     # Get current model from start script
-    current_model=$(grep -oP 'MODEL_PATH="\K[^"]+' "$PROJECT_ROOT/start_vllm.sh" 2>/dev/null || echo "None")
+    current_model=$(grep -oP 'MODEL_PATH="\K[^"]+' "$PROJECT_ROOT/start_llm_server.sh" 2>/dev/null || echo "None")
     if [ "$current_model" != "None" ]; then
         current_name=$(basename "$current_model")
         echo "Current model: $current_name"
@@ -580,7 +652,7 @@ fi
 
 # Update start script with new model
 info "Updating start script..."
-sed -i "s|MODEL_PATH=".*"|MODEL_PATH=\"$selected_model\"|" "$PROJECT_ROOT/start_vllm.sh"
+sed -i "s|MODEL_PATH=".*"|MODEL_PATH=\"$selected_model\"|" "$PROJECT_ROOT/start_llm_server.sh"
 
 # Update configuration to reference the new model name
 info "Updating configuration..."
@@ -590,7 +662,7 @@ sed -i "s|mistral-3-3b-worker|${model_name%.gguf}-worker|g" "$CONFIG_DIR/agents/
 # Restart vLLM server
 info "Restarting vLLM server with new model..."
 cd "$PROJECT_ROOT"
-./start_vllm.sh "$selected_model" &
+./start_llm_server.sh "$selected_model" &
 
 # Wait a bit for server to start
 sleep 3
@@ -764,7 +836,7 @@ switch_to_single() {
     info "Switching to SINGLE mode (Local Mistral only)..."
     
     # Get current worker model from start script
-    local model_path=$(grep -oP 'MODEL_PATH="\K[^"]+' "$PROJECT_ROOT/start_vllm.sh" 2>/dev/null)
+    local model_path=$(grep -oP 'MODEL_PATH="\K[^"]+' "$PROJECT_ROOT/start_llm_server.sh" 2>/dev/null)
     local model_name="mistral-vibe"
     
     if [ -n "$model_path" ]; then
@@ -899,7 +971,7 @@ echo ""
 echo "  Primary Agent:   $CONFIG_DIR/agents/mistral-vibe.md (Mistral API)"
 echo "  Worker Agent:    $CONFIG_DIR/agents/worker.md (Local Mistral-3-3B)"
 echo "  Config:          $CONFIG_DIR/config.json"
-echo "  Start Script:    $PROJECT_ROOT/start_vllm.sh"
+echo "  Start Script:    $PROJECT_ROOT/start_llm_server.sh"
 echo "  Model Changer:   $PROJECT_ROOT/change_worker_model.sh"
 echo "  Mode Toggle:    $PROJECT_ROOT/toggle_hybrid_mode.sh"
 echo "  Worker Server:   $SERVER_URL (for local worker)"
@@ -911,7 +983,7 @@ if [ -f "$MODELS_DIR/Mistral-3-3B-Instruct-2512-Q4_K_M.gguf" ]; then
     info "✓ Worker model ready: Mistral-3-3B-Instruct-2512-Q4_K_M.gguf"
     echo ""
     echo "  Next steps:"
-    echo "    1. Start worker server: ./start_vllm.sh"
+    echo "    1. Start worker server: ./start_llm_server.sh"
     echo "    2. Configure Mistral API key for primary agent"
     echo "    3. Use Mistral Vibe hybrid architecture"
     echo ""
@@ -927,7 +999,7 @@ else
     echo ""
     echo "  Next steps:"
     echo "    1. Download Mistral-3-3B model or use existing model"
-    echo "    2. Start worker server: ./start_vllm.sh /path/to/model.gguf"
+    echo "    2. Start worker server: ./start_llm_server.sh /path/to/model.gguf"
     echo "    3. Configure Mistral API key for primary agent"
     echo "    4. Use Mistral Vibe hybrid architecture"
     echo ""

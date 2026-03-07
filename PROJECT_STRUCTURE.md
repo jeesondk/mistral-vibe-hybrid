@@ -36,7 +36,7 @@ mistral-vibe-hybrid/
 │   ├── package.sh
 │   ├── sign_scripts.sh
 │   ├── setup_mistral_vibe.sh
-│   ├── start_vllm.sh
+│   ├── start_llm_server.sh
 │   └── toggle_hybrid_mode.sh
 ├── src/                   # Python package
 │   ├── __init__.py        # Package initialization
@@ -87,7 +87,7 @@ cd mistral-vibe-hybrid
 ./setup_mistral_vibe.sh
 
 # Start worker server
-./start_vllm.sh
+./start_llm_server.sh
 
 # Use extended Vibe
 ./vibe-extended

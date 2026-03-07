@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Agent Templates**: Modular template system for hybrid and single agents
 - **Management Scripts**:
   - `setup_mistral_vibe.sh`: Main setup script
-  - `start_vllm.sh`: Worker server management
+  - `start_llm_server.sh`: Multi-backend LLM server management
   - `change_worker_model.sh`: Model switching
   - `toggle_hybrid_mode.sh`: Mode toggle
 - **Vibe Extension**:

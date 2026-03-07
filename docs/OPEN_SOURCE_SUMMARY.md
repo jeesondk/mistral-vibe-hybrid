@@ -23,7 +23,7 @@
 #### 3. **Management Scripts** 🎬
 - `change_worker_model.sh` - Worker model management
 - `toggle_hybrid_mode.sh` - Mode switching
-- `start_vllm.sh` - Local LLM server management
+- `start_llm_server.sh` - Multi-backend LLM server management (vLLM, llama.cpp, ollama)
 
 #### 4. **Vibe Extension** 🤖
 - `vibe_custom_commands.py` - Custom command implementations

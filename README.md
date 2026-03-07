@@ -27,7 +27,7 @@ This project provides a complete hybrid agent system that combines:
 ./setup_mistral_vibe.sh
 
 # Start the worker server
-./start_vllm.sh
+./start_llm_server.sh
 
 # Configure Mistral API key for primary agent
 # (implementation-specific - add your API key)
@@ -150,7 +150,7 @@ mistral-vibe-hybrid/
 ├── agent_templates/              # 📝 Agent prompt templates
 ├── scripts/                      # 🎬 Management scripts
 │   ├── setup_mistral_vibe.sh      # 🎯 Main setup (31KB)
-│   ├── start_vllm.sh             # 🚀 Worker server (660B)
+│   ├── start_llm_server.sh       # 🚀 Multi-backend LLM server
 │   ├── change_worker_model.sh    # 🔄 Model management (3.8KB)
 │   └── toggle_hybrid_mode.sh     # ⚡ Mode toggle (7.5KB)
 ├── src/                          # 🐍 Python extensions
@@ -301,9 +301,9 @@ This project is designed for open source contribution:
 ## Requirements
 
 - Python 3.8+
-- vLLM or llama.cpp for local serving
+- vLLM, llama.cpp, or ollama for local serving
 - Mistral API key (for primary agent)
-- GGUF models in `~/models/` directory
+- GGUF models in `~/models/` directory (for vLLM/llama.cpp)
 
 ## Vibe Extension System
 
