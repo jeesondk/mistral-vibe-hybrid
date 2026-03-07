@@ -36,10 +36,8 @@ jobs:
         uv venv .venv
         source .venv/bin/activate
         
-        # Install Python dependencies
-        uv pip install vllm openai requests pyyaml
-        
-        # Install the package in development mode
+        # Install minimal dependencies and the package
+        uv pip install pyyaml
         uv pip install -e .
         
     - name: Extract version from tag
