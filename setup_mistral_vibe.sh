@@ -459,7 +459,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "Examples:"
     echo "  ./start_llm_server.sh vllm /path/to/model.gguf 8000"
     echo "  ./start_llm_server.sh llamacpp /path/to/model.gguf 8000"
-    echo "  ./start_llm_server.sh ollama mistral:latest 8000"
+    echo "  ./start_llm_server.sh ollama mistral:7b-instruct-v0.2 8000"
     exit 0
 fi
 
