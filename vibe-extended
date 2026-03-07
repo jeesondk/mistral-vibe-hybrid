@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Extended Vibe wrapper that loads custom commands
+
+# Set project root environment variable
+export VIBE_PROJECT_ROOT="$(dirname "$(realpath "$0")")"
+
+# Run the extended version
+python3 "$VIBE_PROJECT_ROOT/load_vibe_extensions.py" "$@"
