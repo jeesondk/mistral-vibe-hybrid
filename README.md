@@ -273,6 +273,21 @@ Add these to your README:
 [![Release](https://github.com/your-repo/mistral-vibe-hybrid/actions/workflows/release.yml/badge.svg)](https://github.com/your-repo/mistral-vibe-hybrid/actions/workflows/release.yml)
 ```
 
+## 📚 Documentation
+
+### Root Documentation (Common Files)
+- **CONTRIBUTING.md** - How to contribute to the project
+- **CHANGELOG.md** - Version history and changes
+- **LICENSE** - MIT License
+
+### Comprehensive Guides in `docs/`
+- **docs/CI_CD_GUIDE.md** - CI/CD pipeline setup and usage
+- **docs/DISTRIBUTION_GUIDE.md** - Distribution and packaging guide
+- **docs/OPEN_SOURCE_SUMMARY.md** - Open source project overview
+- **docs/TESTING_GUIDE.md** - Testing strategy and coverage
+- **docs/UV_GUIDE.md** - UV setup and usage guide
+- **docs/STRUCTURE.md** - Documentation organization
+
 ## 🎯 Open Source Ready
 
 This project is designed for open source contribution:
