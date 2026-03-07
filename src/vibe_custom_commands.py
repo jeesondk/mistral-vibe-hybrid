@@ -3,9 +3,12 @@ Custom commands for Mistral Vibe extension
 This module adds /use_hybrid_mode and /change_worker_model commands to Vibe
 """
 
+from __future__ import annotations
+
 import os
 import subprocess
 import sys
+from typing import Any
 
 # Module-level reference set by patch_vibe()
 _UserCommandMessage = None
@@ -52,14 +55,14 @@ def register_custom_commands(command_registry_class: type) -> None:
     command_registry_class.__init__ = new_init  # type: ignore[misc]
 
 
-def add_custom_command_handlers(app_class: type, UserCommandMessage=None) -> None:
+def add_custom_command_handlers(app_class: type, UserCommandMessage: type | None = None) -> None:
     """
     Add custom command handler methods to the VibeApp class
     """
     if UserCommandMessage is None:
         UserCommandMessage = _UserCommandMessage
 
-    async def _handle_use_hybrid_mode(self, mode: str = "") -> None:
+    async def _handle_use_hybrid_mode(self: Any, mode: str = "") -> None:
         """Handle /use_hybrid_mode command"""
         project_root = os.environ.get('VIBE_PROJECT_ROOT', os.getcwd())
         toggle_script = os.path.join(project_root, 'toggle_hybrid_mode.sh')
@@ -101,7 +104,7 @@ def add_custom_command_handlers(app_class: type, UserCommandMessage=None) -> Non
                 UserCommandMessage(f"❌ Error: {result.stderr}")
             )
     
-    async def _handle_change_worker_model(self, model_path: str = "") -> None:
+    async def _handle_change_worker_model(self: Any, model_path: str = "") -> None:
         """Handle /change_worker_model command"""
         project_root = os.environ.get('VIBE_PROJECT_ROOT', os.getcwd())
         change_script = os.path.join(project_root, 'change_worker_model.sh')
