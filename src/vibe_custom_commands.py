@@ -14,7 +14,7 @@ def register_custom_commands(command_registry_class: type) -> None:
     """
     Monkey-patch the CommandRegistry class to include custom commands
     """
-    original_init = command_registry_class.__init__
+    original_init = command_registry_class.__init__  # type: ignore[misc]
     
     def new_init(self, excluded_commands=None):
         # Call original init
@@ -49,7 +49,7 @@ def register_custom_commands(command_registry_class: type) -> None:
             for alias in ["/change_worker_model", "/worker_model", "/model"]:
                 self._alias_map[alias] = "change_worker_model"
     
-    command_registry_class.__init__ = new_init
+    command_registry_class.__init__ = new_init  # type: ignore[misc]
 
 
 def add_custom_command_handlers(app_class: type, UserCommandMessage=None) -> None:
