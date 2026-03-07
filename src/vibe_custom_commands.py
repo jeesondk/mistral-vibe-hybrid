@@ -61,6 +61,7 @@ def add_custom_command_handlers(app_class: type, UserCommandMessage: type | None
     """
     if UserCommandMessage is None:
         UserCommandMessage = _UserCommandMessage
+    assert UserCommandMessage is not None, "UserCommandMessage not set; call patch_vibe() first"
 
     async def _handle_use_hybrid_mode(self: Any, mode: str = "") -> None:
         """Handle /use_hybrid_mode command"""
