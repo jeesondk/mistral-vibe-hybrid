@@ -7,7 +7,7 @@ set -euo pipefail
 # Backends: vllm, llamacpp, ollama
 
 # Show help if requested
-if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
     echo "Usage: ./start_llm_server.sh [BACKEND] [MODEL_PATH] [PORT]"
     echo ""
     echo "Backends:"

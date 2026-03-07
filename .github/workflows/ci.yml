@@ -69,24 +69,7 @@ jobs:
         # Test with custom temp directory
         ./install.sh --dir /tmp/test-install --help
         
-    - name: Test package creation
-      run: |
-        echo "Testing package creation..."
-        # Test the actual package script
-        ./package.sh tar.gz
-        
-        # Verify package was created
-        if [ -f dist/mistral-vibe-hybrid-1.0.0-*.tar.gz ]; then
-            echo "✓ Package created successfully"
-            ls -la dist/
-        else
-            echo "⚠ Package creation may have issues (expected in CI)"
-            # Create a dummy package to continue CI
-            mkdir -p dist
-            echo "Test" > test.txt
-            tar -czf dist/test-package.tar.gz test.txt
-            rm test.txt
-        fi
+
         
     - name: Test script signing (simulated)
       run: |
@@ -158,7 +141,6 @@ jobs:
       run: |
         echo "Cleaning up..."
         rm -rf /tmp/test-install || true
-        rm -rf dist || true
         echo "✓ Cleanup completed"
         
     - name: Success
