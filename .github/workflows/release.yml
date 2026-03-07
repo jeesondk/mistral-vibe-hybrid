@@ -31,6 +31,15 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y curl git gnupg
+        
+        # Create and use a virtual environment with UV
+        uv venv .venv
+        source .venv/bin/activate
+        
+        # Install Python dependencies
+        uv pip install vllm openai requests pyyaml
+        
+        # Install the package in development mode
         uv pip install -e .
         
     - name: Extract version from tag
@@ -43,11 +52,17 @@ jobs:
         
     - name: Make scripts executable
       run: |
+        # Activate virtual environment
+        source .venv/bin/activate
+        
         find . -name "*.sh" -exec chmod +x {} \;
         chmod +x vibe-extended
         
     - name: Create packages
       run: |
+        # Activate virtual environment
+        source .venv/bin/activate
+        
         echo "Creating release packages..."
         ./package.sh all --checksums
         ls -la dist/
