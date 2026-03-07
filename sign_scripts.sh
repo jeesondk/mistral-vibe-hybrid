@@ -34,11 +34,11 @@ mkdir -p "$SIGNATURE_DIR"
 # Check if GPG is available
 check_gpg() {
     if ! command -v gpg &> /dev/null; then
-        error "GPG is required for signing but not installed."
         echo "Install GPG with:"
         echo "  sudo apt-get install gnupg    # Debian/Ubuntu"
         echo "  sudo yum install gnupg      # RHEL/CentOS"
         echo "  brew install gnupg          # macOS"
+        error "GPG is required for signing but not installed."
     fi
 }
 

@@ -6,8 +6,6 @@ This module adds /use_hybrid_mode and /change_worker_model commands to Vibe
 import os
 import subprocess
 import sys
-from pathlib import Path
-from typing import Dict, Any
 
 # Module-level reference set by patch_vibe()
 _UserCommandMessage = None

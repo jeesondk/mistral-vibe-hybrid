@@ -161,10 +161,7 @@ sed -i "s|mistral-3-3b-worker|${model_name%.gguf}-worker|g" "$CONFIG_DIR/agents/
 info "Restarting LLM server with new model..."
 cd "$PROJECT_ROOT"
 
-# Get current backend from start script
-current_backend=$(grep -oP 'BACKEND="\K[^"]+' "$PROJECT_ROOT/start_llm_server.sh" 2>/dev/null || echo "vllm")
-
-./start_llm_server.sh "$current_backend" "$selected_model" &
+./start_llm_server.sh vllm "$selected_model" &
 
 # Wait a bit for server to start
 sleep 3

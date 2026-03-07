@@ -16,6 +16,7 @@ NC='\033[0m'
 info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+sed_escape() { printf '%s\n' "$1" | sed 's:[&/\]:\\&:g'; }
 
 # Check current mode
 get_current_mode() {
@@ -86,7 +87,7 @@ switch_to_hybrid() {
       "mode": "primary",
       "description": "Mistral Vibe primary agent. Handles complex tasks, architecture, and planning. Uses Mistral API for high-quality reasoning.",
       "model": "mistral-api/devstral-medium-latest",
-      "prompt": "{file:$CONFIG_DIR/agents/mistral-vibe.md}",
+      "prompt": "{file:__CONFIG_DIR__/agents/mistral-vibe.md}",
       "temperature": 0.1,
       "steps": 12,
       "permission": {
@@ -99,13 +100,15 @@ switch_to_hybrid() {
       "mode": "subagent",
       "description": "Local worker agent. Handles focused tasks, file edits, and tool execution. Uses local Mistral-3-3B model.",
       "model": "local-llm/mistral-3-3b-worker",
-      "prompt": "{file:$CONFIG_DIR/agents/worker.md}",
+      "prompt": "{file:__CONFIG_DIR__/agents/worker.md}",
       "temperature": 0.1,
       "steps": 6
     }
   }
 }
 HYBRIDCONFIG
+    escaped_config_dir=$(sed_escape "$CONFIG_DIR")
+    sed -i "s|__CONFIG_DIR__|$escaped_config_dir|g" "$CONFIG_DIR/config.json"
 
     # Ensure both agent prompts exist
     if [ ! -f "$CONFIG_DIR/agents/worker.md" ]; then
@@ -136,7 +139,8 @@ The project root is "__PROJECT_ROOT__". ALWAYS use absolute paths.
 3. **Precise Execution**: Follow instructions exactly
 4. **Error Handling**: If a tool fails, stop and report the error
 WORKEREOF
-        sed -i "s|__PROJECT_ROOT__|$PROJECT_ROOT|g" "$CONFIG_DIR/agents/worker.md"
+        escaped_root=$(sed_escape "$PROJECT_ROOT")
+        sed -i "s|__PROJECT_ROOT__|$escaped_root|g" "$CONFIG_DIR/agents/worker.md"
     fi
     
     info "✓ Hybrid mode enabled"
@@ -223,7 +227,8 @@ The project root is "__PROJECT_ROOT__". Use absolute paths starting with this pr
 - Never retry the same failed action
 - Use write_file instead of search_replace if needed
 SINGLEEOF
-    sed -i "s|__PROJECT_ROOT__|$PROJECT_ROOT|g" "$CONFIG_DIR/agents/mistral-vibe.md"
+    escaped_root=$(sed_escape "$PROJECT_ROOT")
+    sed -i "s|__PROJECT_ROOT__|$escaped_root|g" "$CONFIG_DIR/agents/mistral-vibe.md"
     sed -i "s|__MODEL_NAME__|$model_name|g" "$CONFIG_DIR/agents/mistral-vibe.md"
 
     info "✓ Single mode enabled"

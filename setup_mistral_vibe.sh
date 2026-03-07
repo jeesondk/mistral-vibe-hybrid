@@ -54,14 +54,15 @@ if [ -z "$(ls -A "$MODELS_DIR" 2>/dev/null)" ]; then
             pip install -q huggingface_hub
         fi
         
-        python -c "
+        MODELS_DIR="$MODELS_DIR" python -c "
 from huggingface_hub import hf_hub_download
 import os
-os.makedirs('$MODELS_DIR', exist_ok=True)
+models_dir = os.environ['MODELS_DIR']
+os.makedirs(models_dir, exist_ok=True)
 hf_hub_download(
     repo_id='TheBloke/Mistral-3-3B-Instruct-2512-GGUF',
     filename='Mistral-3-3B-Instruct-2512-Q4_K_M.gguf',
-    local_dir='$MODELS_DIR',
+    local_dir=models_dir,
     local_dir_use_symlinks=False
 )
 print('Download complete!')
@@ -141,7 +142,7 @@ cat > "$CONFIG_DIR/config.json" << 'CONFIGEOF'
       "mode": "primary",
       "description": "Mistral Vibe primary agent. Handles complex tasks, architecture, and planning. Uses Mistral API for high-quality reasoning.",
       "model": "mistral-api/devstral-medium-latest",
-      "prompt": "{file:$CONFIG_DIR/agents/mistral-vibe.md}",
+      "prompt": "{file:__CONFIG_DIR__/agents/mistral-vibe.md}",
       "temperature": 0.1,
       "steps": 12,
       "permission": {
@@ -154,13 +155,14 @@ cat > "$CONFIG_DIR/config.json" << 'CONFIGEOF'
       "mode": "subagent",
       "description": "Local worker agent. Handles focused tasks, file edits, and tool execution. Uses local Mistral-3-3B model.",
       "model": "local-llm/mistral-3-3b-worker",
-      "prompt": "{file:$CONFIG_DIR/agents/worker.md}",
+      "prompt": "{file:__CONFIG_DIR__/agents/worker.md}",
       "temperature": 0.1,
       "steps": 6
     }
   }
 }
 CONFIGEOF
+sed -i "s|__CONFIG_DIR__|$CONFIG_DIR|g" "$CONFIG_DIR/config.json"
 
 # ---------------------------------------------------------------------------
 # 4. Create agent prompts from templates
@@ -277,8 +279,9 @@ fi
 # 5. Replace project root placeholder in both agent files
 # ---------------------------------------------------------------------------
 info "Replacing project root placeholder..."
-sed -i "s|__PROJECT_ROOT__|$PROJECT_ROOT|g" "$CONFIG_DIR/agents/mistral-vibe.md"
-sed -i "s|__PROJECT_ROOT__|$PROJECT_ROOT|g" "$CONFIG_DIR/agents/worker.md"
+escaped_root=$(printf '%s\n' "$PROJECT_ROOT" | sed 's:[&/\]:\\&:g')
+sed -i "s|__PROJECT_ROOT__|$escaped_root|g" "$CONFIG_DIR/agents/mistral-vibe.md"
+sed -i "s|__PROJECT_ROOT__|$escaped_root|g" "$CONFIG_DIR/agents/worker.md"
 
 info "Copying scripts from source..."
 

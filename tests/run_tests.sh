@@ -235,7 +235,7 @@ generate_html_report() {
     
     HTML_REPORT="$COVERAGE_DIR/report.html"
     
-    cat > "$HTML_REPORT" << 'EOF'
+    cat > "$HTML_REPORT" << EOF
 <!DOCTYPE html>
 <html>
 <head>
