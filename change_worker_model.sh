@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 # Worker Model Changer for Mistral Vibe Hybrid Setup
 # Usage: ./change_worker_model.sh [new_model.gguf]
@@ -91,7 +91,11 @@ if [ $# -eq 0 ]; then
     echo ""
     
     # List available models
-    models=($MODELS_DIR/*.gguf 2>/dev/null)
+    models=("$MODELS_DIR"/*.gguf)
+    # Check if glob matched anything (bash returns literal pattern if no match)
+    if [ ! -e "${models[0]}" ]; then
+        models=()
+    fi
     if [ ${#models[@]} -eq 0 ]; then
         error "No GGUF models found in $MODELS_DIR"
     fi

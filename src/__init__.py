@@ -8,6 +8,3 @@ __version__ = "1.0.0"
 __author__ = "Mistral Vibe Setup"
 __license__ = "MIT"
 __all__ = ["vibe_custom_commands", "load_vibe_extensions"]
-
-from . import vibe_custom_commands
-from . import load_vibe_extensions

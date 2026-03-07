@@ -5,4 +5,4 @@
 export VIBE_PROJECT_ROOT="$(dirname "$(realpath "$0")")"
 
 # Run the extended version
-python3 "$VIBE_PROJECT_ROOT/load_vibe_extensions.py" "$@"
+python3 "$VIBE_PROJECT_ROOT/src/load_vibe_extensions.py" "$@"

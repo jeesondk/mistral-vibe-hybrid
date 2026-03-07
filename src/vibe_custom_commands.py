@@ -7,9 +7,10 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
-# Add the custom commands to Vibe's command registry
+# Module-level reference set by patch_vibe()
+_UserCommandMessage = None
 
 def register_custom_commands(command_registry_class: type) -> None:
     """
@@ -53,16 +54,18 @@ def register_custom_commands(command_registry_class: type) -> None:
     command_registry_class.__init__ = new_init
 
 
-def add_custom_command_handlers(app_class: type) -> None:
+def add_custom_command_handlers(app_class: type, UserCommandMessage=None) -> None:
     """
     Add custom command handler methods to the VibeApp class
     """
-    
+    if UserCommandMessage is None:
+        UserCommandMessage = _UserCommandMessage
+
     async def _handle_use_hybrid_mode(self, mode: str = "") -> None:
         """Handle /use_hybrid_mode command"""
         project_root = os.environ.get('VIBE_PROJECT_ROOT', os.getcwd())
         toggle_script = os.path.join(project_root, 'toggle_hybrid_mode.sh')
-        
+
         if not os.path.exists(toggle_script):
             await self._mount_and_scroll(
                 UserCommandMessage("❌ Error: toggle_hybrid_mode.sh not found. Run setup_mistral_vibe.sh first.")
@@ -161,13 +164,13 @@ def patch_vibe():
         from vibe.cli.textual_ui.app import VibeApp
         from vibe.cli.textual_ui.widgets.messages import UserCommandMessage
         
-        # Make UserCommandMessage available in this scope
-        global UserCommandMessage
-        UserCommandMessage = UserCommandMessage
-        
+        # Make UserCommandMessage available at module level
+        global _UserCommandMessage
+        _UserCommandMessage = UserCommandMessage
+
         # Register custom commands
         register_custom_commands(CommandRegistry)
-        add_custom_command_handlers(VibeApp)
+        add_custom_command_handlers(VibeApp, UserCommandMessage)
         
         print("✅ Vibe custom commands registered successfully!")
         print("Available commands:")

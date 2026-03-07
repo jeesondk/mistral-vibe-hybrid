@@ -125,17 +125,18 @@ You are the Worker agent for Mistral Vibe. You handle focused, well-defined task
 - Never make decisions - follow instructions precisely
 
 ## Project Root
-The project root is "$PROJECT_ROOT". ALWAYS use absolute paths.
+The project root is "__PROJECT_ROOT__". ALWAYS use absolute paths.
 
 ## Available Tools
 - read_file, write_file, search_replace, grep, bash
 
 ## Critical Rules
-1. **Exact Paths**: Always use absolute paths starting with $PROJECT_ROOT
+1. **Exact Paths**: Always use absolute paths starting with __PROJECT_ROOT__
 2. **Read First**: Always read files before modifying
 3. **Precise Execution**: Follow instructions exactly
 4. **Error Handling**: If a tool fails, stop and report the error
 WORKEREOF
+        sed -i "s|__PROJECT_ROOT__|$PROJECT_ROOT|g" "$CONFIG_DIR/agents/worker.md"
     fi
     
     info "✓ Hybrid mode enabled"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 # Start LLM server for Mistral Vibe
 # Supports vLLM, llama.cpp, and ollama backends
@@ -53,9 +53,7 @@ case "$BACKEND" in
         # Check if llama.cpp server is available
         if ! command -v llama-server &> /dev/null; then
             # Try common llama.cpp installation locations
-            if [ -f "/home/jesper/llama.cpp/build/bin/llama-server" ]; then
-                export PATH="/home/jesper/llama.cpp/build/bin:$PATH"
-            elif [ -f "$HOME/llama.cpp/build/bin/llama-server" ]; then
+            if [ -f "$HOME/llama.cpp/build/bin/llama-server" ]; then
                 export PATH="$HOME/llama.cpp/build/bin:$PATH"
             elif [ -f "/usr/local/bin/llama-server" ]; then
                 export PATH="/usr/local/bin:$PATH"

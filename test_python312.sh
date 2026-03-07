@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 # ============================================================================
 # Python 3.12 Migration Test Script
@@ -18,7 +18,8 @@ NC='\033[0m'
 
 info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+error() { echo -e "${RED}[ERROR]${NC} $1"; }
+fail()  { echo -e "${RED}[FAIL]${NC} $1"; }
 success() { echo -e "${BLUE}[SUCCESS]${NC} $1"; }
 
 # Test counters
@@ -40,7 +41,7 @@ run_test() {
         return 0
     else
         FAILED_TESTS=$((FAILED_TESTS + 1))
-        error "❌ FAIL: $test_name"
+        fail "❌ FAIL: $test_name"
         return 1
     fi
 }
@@ -60,7 +61,7 @@ main() {
     
     # Test 2: CI workflow Python version
     run_test "CI workflow Python version" \
-        "grep 'python-version' .github/workflows/ci-test.yml" \
+        "grep 'python-version' .github/workflows/ci.yml" \
         "3.12"
     
     # Test 3: Release workflow Python version
@@ -90,12 +91,12 @@ main() {
     
     # Test 8: UV guide version
     run_test "UV guide version" \
-        "grep '3.12' UV_GUIDE.md" \
+        "grep '3.12' docs/UV_GUIDE.md" \
         "3.12"
     
     # Test 9: CI/CD guide version
     run_test "CI/CD guide version" \
-        "grep 'Set up Python 3.12' CI_CD_GUIDE.md" \
+        "grep 'Set up Python 3.12' docs/CI_CD_GUIDE.md" \
         "3.12"
     
     echo ""
@@ -108,7 +109,7 @@ main() {
     echo ""
     
     if [ "$FAILED_TESTS" -gt 0 ]; then
-        error "Some tests failed. Python 3.12 migration may be incomplete."
+        fail "Some tests failed. Python 3.12 migration may be incomplete."
     fi
     
     # Calculate success rate
