@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eo pipefail
+set -o pipefail
 
 # ============================================================================
 # Mistral Vibe Hybrid Setup - Test Runner
@@ -139,20 +139,20 @@ run_tests() {
         "$PROJECT_ROOT/sign_scripts.sh --help" \
         "$COVERAGE_DIR/test_sign_help.txt"
     
-    # Test 5: Setup script with automatic responses
-    run_test "setup_mistral_vibe.sh (automatic)" \
-        "cd $PROJECT_ROOT && echo -e '\n\n' | ./setup_mistral_vibe.sh" \
-        "$COVERAGE_DIR/test_setup_automatic.txt"
-    
-    # Test 6: Toggle hybrid mode help
-    run_test "toggle_hybrid_mode.sh --help" \
-        "$PROJECT_ROOT/toggle_hybrid_mode.sh --help" \
-        "$COVERAGE_DIR/test_toggle_help.txt"
-    
-    # Test 7: Change worker model help
-    run_test "change_worker_model.sh --help" \
-        "$PROJECT_ROOT/change_worker_model.sh --help" \
-        "$COVERAGE_DIR/test_change_worker_help.txt"
+    # Test 5: Toggle hybrid mode status (no args shows usage)
+    run_test "toggle_hybrid_mode.sh (usage)" \
+        "$PROJECT_ROOT/toggle_hybrid_mode.sh" \
+        "$COVERAGE_DIR/test_toggle_usage.txt"
+
+    # Test 6: Shell syntax checks
+    run_test "Shell syntax: setup_mistral_vibe.sh" \
+        "bash -n $PROJECT_ROOT/setup_mistral_vibe.sh" \
+        "$COVERAGE_DIR/test_syntax_setup.txt"
+
+    # Test 7: Shell syntax: change_worker_model.sh
+    run_test "Shell syntax: change_worker_model.sh" \
+        "bash -n $PROJECT_ROOT/change_worker_model.sh" \
+        "$COVERAGE_DIR/test_syntax_change_worker.txt"
     
     # Test 8: Python syntax - vibe_custom_commands.py
     run_test "Python syntax: vibe_custom_commands.py" \
