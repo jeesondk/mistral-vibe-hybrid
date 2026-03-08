@@ -2,8 +2,8 @@
 requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "coverage>=7.0",
@@ -60,6 +60,8 @@ strict_optional = true
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "C4", "UP", "YTT"]
 ignore = ["E501"]
 

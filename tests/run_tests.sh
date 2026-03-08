@@ -1,372 +1,251 @@
 #!/usr/bin/env bash
-set -o pipefail
+set -euo pipefail
 
 # ============================================================================
-# Mistral Vibe Hybrid Setup - Test Runner
+# Mistral Vibe Hybrid Setup - Shell Script Test Runner
 # ============================================================================
 #
-# This script runs comprehensive tests and collects coverage
-# Usage: ./tests/run_tests.sh [options]
-# Options: --coverage, --verbose, --help
+# Runs behavioral tests against project shell scripts.
+# Usage: ./tests/run_tests.sh [--verbose] [--help]
 # ============================================================================
 
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
 NC='\033[0m'
 
-info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
-warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1"; }
-fatal() { echo -e "${RED}[FATAL]${NC} $1"; exit 1; }
+TEST_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$TEST_DIR/.." && pwd)"
 
-# Configuration
-TEST_DIR="$(dirname "$0")"
-PROJECT_ROOT="$TEST_DIR/.."
-COVERAGE_DIR="$TEST_DIR/coverage"
-TEST_REPORT="$TEST_DIR/test_report.txt"
-COVERAGE_REPORT="$COVERAGE_DIR/coverage_report.txt"
-
-# Parse arguments
-COVERAGE=false
+TOTAL=0
+PASSED=0
+FAILED=0
 VERBOSE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --coverage)
-            COVERAGE=true
-            shift
-            ;;
-        --verbose|-v)
-            VERBOSE=true
-            set -x
-            shift
-            ;;
+        --verbose|-v) VERBOSE=true; shift ;;
+        --coverage)   shift ;;  # accepted for backwards compat, no-op
         --help|-h)
-            echo "Usage: $0 [options]"
-            echo ""
-            echo "Options:"
-            echo "  --coverage    Collect test coverage"
-            echo "  --verbose, -v Enable verbose output"
-            echo "  --help, -h    Show this help"
+            echo "Usage: $0 [--verbose] [--help]"
             exit 0
             ;;
-        *)
-            fatal "Unknown option: $1"
-            ;;
+        *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
 
-# Create directories
-mkdir -p "$COVERAGE_DIR"
-echo "" > "$TEST_REPORT"
-echo "" > "$COVERAGE_REPORT"
+pass() {
+    PASSED=$((PASSED + 1))
+    TOTAL=$((TOTAL + 1))
+    echo -e "  ${GREEN}✓${NC} $1"
+}
 
-# Test counter
-TOTAL_TESTS=0
-PASSED_TESTS=0
-FAILED_TESTS=0
-
-run_test() {
-    local test_name="$1"
-    local test_command="$2"
-    local test_file="$3"
-    
-    TOTAL_TESTS=$((TOTAL_TESTS + 1))
-    
-    if [ "$VERBOSE" = true ]; then
-        info "Running: $test_name"
-        echo "Command: $test_command"
+fail() {
+    FAILED=$((FAILED + 1))
+    TOTAL=$((TOTAL + 1))
+    echo -e "  ${RED}✗${NC} $1"
+    if [[ -n "${2:-}" ]]; then
+        echo -e "    ${YELLOW}→ $2${NC}"
     fi
-    
-    # Run test and capture output
-    local start_time=$(date +%s%N)
-    
-    if bash -c "$test_command" > "$test_file" 2>&1; then
-        local end_time=$(date +%s%N)
-        local duration=$(( (end_time - start_time) / 1000000 )) # milliseconds
-        
-        PASSED_TESTS=$((PASSED_TESTS + 1))
-        echo "✅ PASS: $test_name ($duration ms)" >> "$TEST_REPORT"
-        
-        if [ "$VERBOSE" = true ]; then
-            echo "Output:"
-            cat "$test_file"
+}
+
+section() {
+    echo ""
+    echo -e "${YELLOW}$1${NC}"
+}
+
+# Helper: run a command and check exit code
+expect_success() {
+    local desc="$1"; shift
+    local output
+    if output=$("$@" 2>&1); then
+        if [[ "$VERBOSE" == true ]]; then
+            echo "    output: $output"
         fi
-        
-        return 0
+        pass "$desc"
     else
-        local end_time=$(date +%s%N)
-        local duration=$(( (end_time - start_time) / 1000000 ))
-        
-        FAILED_TESTS=$((FAILED_TESTS + 1))
-        echo "❌ FAIL: $test_name ($duration ms)" >> "$TEST_REPORT"
-        echo "Output:" >> "$TEST_REPORT"
-        cat "$test_file" >> "$TEST_REPORT"
-        echo "" >> "$TEST_REPORT"
-        
-        if [ "$VERBOSE" = true ]; then
-            warn "Test failed: $test_name"
+        fail "$desc" "exit code $?, output: ${output:0:200}"
+    fi
+}
+
+expect_failure() {
+    local desc="$1"; shift
+    local output
+    if output=$("$@" 2>&1); then
+        fail "$desc" "expected failure but got success"
+    else
+        if [[ "$VERBOSE" == true ]]; then
+            echo "    output: $output"
         fi
-        
-        return 1
+        pass "$desc"
     fi
 }
 
-# Run all tests
-run_tests() {
-    info "Running tests..."
-    
-    # Test 1: Install script help
-    run_test "install.sh --help" \
-        "$PROJECT_ROOT/install.sh --help" \
-        "$COVERAGE_DIR/test_install_help.txt"
-    
-    # Test 2: Install script version
-    run_test "install.sh --version" \
-        "$PROJECT_ROOT/install.sh --version" \
-        "$COVERAGE_DIR/test_install_version.txt"
-    
-    # Test 3: Package script help
-    run_test "package.sh --help" \
-        "$PROJECT_ROOT/package.sh --help" \
-        "$COVERAGE_DIR/test_package_help.txt"
-    
-    # Test 4: Sign scripts help
-    run_test "sign_scripts.sh --help" \
-        "$PROJECT_ROOT/sign_scripts.sh --help" \
-        "$COVERAGE_DIR/test_sign_help.txt"
-    
-    # Test 5: Toggle hybrid mode status (no args shows usage)
-    run_test "toggle_hybrid_mode.sh (usage)" \
-        "$PROJECT_ROOT/toggle_hybrid_mode.sh" \
-        "$COVERAGE_DIR/test_toggle_usage.txt"
-
-    # Test 6: Shell syntax checks
-    run_test "Shell syntax: setup_mistral_vibe.sh" \
-        "bash -n $PROJECT_ROOT/setup_mistral_vibe.sh" \
-        "$COVERAGE_DIR/test_syntax_setup.txt"
-
-    # Test 7: Shell syntax: change_worker_model.sh
-    run_test "Shell syntax: change_worker_model.sh" \
-        "bash -n $PROJECT_ROOT/change_worker_model.sh" \
-        "$COVERAGE_DIR/test_syntax_change_worker.txt"
-    
-    # Test 8: Python syntax - vibe_custom_commands.py
-    run_test "Python syntax: vibe_custom_commands.py" \
-        "python3 -m py_compile $PROJECT_ROOT/src/vibe_custom_commands.py" \
-        "$COVERAGE_DIR/test_python_vibe_commands.txt"
-    
-    # Test 9: Python syntax - load_vibe_extensions.py
-    run_test "Python syntax: load_vibe_extensions.py" \
-        "python3 -m py_compile $PROJECT_ROOT/src/load_vibe_extensions.py" \
-        "$COVERAGE_DIR/test_python_extensions.txt"
-    
-    # Test 10: Shellcheck on all scripts
-    run_test "Shellcheck: install.sh" \
-        "shellcheck $PROJECT_ROOT/install.sh || echo 'shellcheck_not_installed'" \
-        "$COVERAGE_DIR/test_shellcheck_install.txt"
-    
-    echo "Tests completed: $PASSED_TESTS/$TOTAL_TESTS passed"
+expect_output_contains() {
+    local desc="$1"
+    local pattern="$2"
+    shift 2
+    local output
+    output=$("$@" 2>&1) || true
+    if echo "$output" | grep -qi "$pattern"; then
+        pass "$desc"
+    else
+        fail "$desc" "output did not contain '$pattern'"
+    fi
 }
 
-# Collect coverage
-collect_coverage() {
-    if [ "$COVERAGE" = false ]; then
-        return
+# ============================================================================
+# Shell syntax validation
+# ============================================================================
+section "Shell syntax validation (bash -n)"
+
+for script in install.sh setup_mistral_vibe.sh start_llm_server.sh \
+              change_worker_model.sh toggle_hybrid_mode.sh sign_scripts.sh \
+              package.sh setup_uv.sh; do
+    if [[ -f "$PROJECT_ROOT/$script" ]]; then
+        expect_success "syntax: $script" bash -n "$PROJECT_ROOT/$script"
+    else
+        fail "syntax: $script" "file not found"
     fi
-    
-    info "Collecting coverage..."
-    
-    # Count lines of code
-    echo "Code Coverage Report" > "$COVERAGE_REPORT"
-    echo "Generated: $(date)" >> "$COVERAGE_REPORT"
-    echo "" >> "$COVERAGE_REPORT"
-    
-    # Shell scripts
-    echo "=== Shell Scripts ===" >> "$COVERAGE_REPORT"
-    for script in "$PROJECT_ROOT"/*.sh; do
-        if [ -f "$script" ]; then
-            lines=$(wc -l < "$script")
-            echo "$(basename "$script"): $lines lines" >> "$COVERAGE_REPORT"
+done
+
+# ============================================================================
+# Shellcheck (if available)
+# ============================================================================
+section "Shellcheck analysis"
+
+if command -v shellcheck &>/dev/null; then
+    for script in install.sh setup_mistral_vibe.sh start_llm_server.sh \
+                  change_worker_model.sh toggle_hybrid_mode.sh; do
+        if [[ -f "$PROJECT_ROOT/$script" ]]; then
+            expect_success "shellcheck: $script" \
+                shellcheck -S warning "$PROJECT_ROOT/$script"
         fi
     done
-    echo "" >> "$COVERAGE_REPORT"
-    
-    # Python files
-    echo "=== Python Files ===" >> "$COVERAGE_REPORT"
-    for pyfile in "$PROJECT_ROOT"/*.py; do
-        if [ -f "$pyfile" ]; then
-            lines=$(wc -l < "$pyfile")
-            echo "$(basename "$pyfile"): $lines lines" >> "$COVERAGE_REPORT"
-        fi
-    done
-    echo "" >> "$COVERAGE_REPORT"
-    
-    # Test files
-    echo "=== Test Files ===" >> "$COVERAGE_REPORT"
-    test_files=$(find "$COVERAGE_DIR" -name "test_*.txt" | wc -l)
-    echo "Total test files: $test_files" >> "$COVERAGE_REPORT"
-    echo "" >> "$COVERAGE_REPORT"
-    
-    # Test coverage summary
-    echo "=== Test Coverage Summary ===" >> "$COVERAGE_REPORT"
-    echo "Total tests: $TOTAL_TESTS" >> "$COVERAGE_REPORT"
-    echo "Passed: $PASSED_TESTS" >> "$COVERAGE_REPORT"
-    echo "Failed: $FAILED_TESTS" >> "$COVERAGE_REPORT"
-    
-    if [ "$TOTAL_TESTS" -gt 0 ]; then
-        coverage_percent=$(( PASSED_TESTS * 100 / TOTAL_TESTS ))
-        echo "Coverage: $coverage_percent%" >> "$COVERAGE_REPORT"
-    fi
-    
-    info "✓ Coverage report generated: $COVERAGE_REPORT"
-}
+else
+    echo -e "  ${YELLOW}⚠ shellcheck not installed, skipping${NC}"
+fi
 
-# Generate HTML report
-generate_html_report() {
-    if [ "$COVERAGE" = false ]; then
-        return
-    fi
-    
-    info "Generating HTML report..."
-    
-    HTML_REPORT="$COVERAGE_DIR/report.html"
-    
-    cat > "$HTML_REPORT" << EOF
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Mistral Vibe Hybrid - Test Report</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h1 { color: #2c3e50; }
-        .summary { background: #f8f9fa; padding: 15px; border-radius: 5px; }
-        .pass { color: #27ae60; }
-        .fail { color: #e74c3c; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background: #34495e; color: white; }
-        tr:hover { background: #f5f5f5; }
-    </style>
-</head>
-<body>
-    <h1>Mistral Vibe Hybrid - Test Report</h1>
-    <div class="summary">
-        <h2>Test Summary</h2>
-        <p>Total Tests: <strong>$TOTAL_TESTS</strong></p>
-        <p class="pass">Passed: <strong>$PASSED_TESTS</strong></p>
-        <p class="fail">Failed: <strong>$FAILED_TESTS</strong></p>
-EOF
-    
-    if [ "$TOTAL_TESTS" -gt 0 ]; then
-        coverage_percent=$(( PASSED_TESTS * 100 / TOTAL_TESTS ))
-        cat >> "$HTML_REPORT" << EOF
-        <p>Coverage: <strong>$coverage_percent%</strong></p>
-EOF
-    fi
-    
-    cat >> "$HTML_REPORT" << 'EOF'
-    </div>
-    
-    <h2>Test Results</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Test Name</th>
-                <th>Status</th>
-                <th>Output</th>
-            </tr>
-        </thead>
-        <tbody>
-EOF
-    
-    # Add test results to HTML
-    while IFS= read -r line; do
-        if [[ "$line" == ✅* ]]; then
-            status="PASS"
-            test_name="${line:4}"
-            echo "            <tr class='pass'>" >> "$HTML_REPORT"
-        elif [[ "$line" == ❌* ]]; then
-            status="FAIL"
-            test_name="${line:4}"
-            echo "            <tr class='fail'>" >> "$HTML_REPORT"
-        else
-            continue
-        fi
-        
-        cat >> "$HTML_REPORT" << EOF
-                <td>$test_name</td>
-                <td>$status</td>
-                <td><a href="test_${status,,}_$(echo "$test_name" | tr ' ' '_' | tr -cd '[:alnum:]_').txt">View</a></td>
-            </tr>
-EOF
-    done < "$TEST_REPORT"
-    
-    cat >> "$HTML_REPORT" << 'EOF'
-        </tbody>
-    </table>
-    
-    <h2>Coverage Details</h2>
-    <pre>
-EOF
-    
-    cat "$COVERAGE_REPORT" >> "$HTML_REPORT"
-    
-    cat >> "$HTML_REPORT" << 'EOF'
-    </pre>
-</body>
-</html>
-EOF
-    
-    info "✓ HTML report generated: $HTML_REPORT"
-}
+# ============================================================================
+# install.sh behavioral tests
+# ============================================================================
+section "install.sh"
 
-# Main function
-main() {
-    echo ""
-    echo "${BLUE}=========================================="
-    echo "  Mistral Vibe Hybrid - Test Runner"
-    echo "==========================================${NC}"
-    echo ""
-    
-    run_tests
-    
-    echo ""
-    echo "=========================================="
-    echo "  Test Results"
-    echo "=========================================="
-    echo "Total:   $TOTAL_TESTS tests"
-    echo "Passed:  $PASSED_TESTS tests"
-    echo "Failed:  $FAILED_TESTS tests"
-    echo ""
-    
-    if [ "$FAILED_TESTS" -gt 0 ]; then
-        error "Some tests failed. See $TEST_REPORT for details."
-        return 1
-    fi
-    
-    collect_coverage
-    generate_html_report
-    
-    echo "Reports generated:"
-    echo "  • Text report:   $TEST_REPORT"
-    echo "  • Coverage:      $COVERAGE_REPORT"
-    echo "  • HTML report:   $HTML_REPORT"
-    echo ""
-    
-    if [ "$COVERAGE" = true ]; then
-        if [ "$TOTAL_TESTS" -gt 0 ]; then
-            coverage_percent=$(( PASSED_TESTS * 100 / TOTAL_TESTS ))
-            echo "Test Coverage: $coverage_percent%"
-        fi
-    fi
-    
-    echo ""
-    info "✅ All tests passed!"
-}
+expect_success   "shows help with --help" "$PROJECT_ROOT/install.sh" --help
+expect_success   "shows help with -h"     "$PROJECT_ROOT/install.sh" -h
+expect_success   "shows version with --version" "$PROJECT_ROOT/install.sh" --version
+expect_success   "shows version with -v"  "$PROJECT_ROOT/install.sh" -v
+expect_output_contains "help includes usage info" "usage" \
+    "$PROJECT_ROOT/install.sh" --help
+expect_output_contains "version includes version number" "1\." \
+    "$PROJECT_ROOT/install.sh" --version
 
-# Run main function
-main "$@"
+# ============================================================================
+# toggle_hybrid_mode.sh behavioral tests
+# ============================================================================
+section "toggle_hybrid_mode.sh"
+
+expect_success "no-args shows usage/status" "$PROJECT_ROOT/toggle_hybrid_mode.sh"
+expect_output_contains "no-args mentions hybrid or single" "hybrid\|single\|mode" \
+    "$PROJECT_ROOT/toggle_hybrid_mode.sh"
+expect_failure "rejects invalid command" "$PROJECT_ROOT/toggle_hybrid_mode.sh" invalidcmd123
+
+# Test with a temp config dir
+TEMP_HOME="$(mktemp -d)"
+trap 'rm -rf "$TEMP_HOME"' EXIT
+mkdir -p "$TEMP_HOME/.config/mistral_vibe/agents"
+
+# Create a minimal config.json so toggle can read it
+cat > "$TEMP_HOME/.config/mistral_vibe/config.json" << 'CONF'
+{
+  "providers": {
+    "mistral-api": { "model": "devstral-medium-latest" },
+    "local-llm": { "model": "mistral-3b" }
+  }
+}
+CONF
+
+expect_output_contains "status detects mode" "hybrid\|single\|mode" \
+    env HOME="$TEMP_HOME" "$PROJECT_ROOT/toggle_hybrid_mode.sh" status
+
+# ============================================================================
+# change_worker_model.sh behavioral tests
+# ============================================================================
+section "change_worker_model.sh"
+
+# --list with no models dir should handle gracefully
+EMPTY_HOME="$(mktemp -d)"
+mkdir -p "$EMPTY_HOME/.config/mistral_vibe"
+expect_output_contains "--list mentions models" "model\|no\|found\|available" \
+    env HOME="$EMPTY_HOME" "$PROJECT_ROOT/change_worker_model.sh" --list
+rm -rf "$EMPTY_HOME"
+
+# --list with a models dir containing fake gguf files
+MODELS_HOME="$(mktemp -d)"
+mkdir -p "$MODELS_HOME/models"
+touch "$MODELS_HOME/models/test-model-1.gguf"
+touch "$MODELS_HOME/models/test-model-2.gguf"
+expect_output_contains "--list shows model files" "test-model" \
+    env HOME="$MODELS_HOME" "$PROJECT_ROOT/change_worker_model.sh" --list
+rm -rf "$MODELS_HOME"
+
+# ============================================================================
+# start_llm_server.sh behavioral tests
+# ============================================================================
+section "start_llm_server.sh"
+
+expect_success "shows help with --help" "$PROJECT_ROOT/start_llm_server.sh" --help
+expect_output_contains "help lists backends" "vllm\|llamacpp\|ollama" \
+    "$PROJECT_ROOT/start_llm_server.sh" --help
+
+# ============================================================================
+# package.sh behavioral tests
+# ============================================================================
+section "package.sh"
+
+expect_success "shows help with --help" "$PROJECT_ROOT/package.sh" --help
+expect_output_contains "help mentions tar or zip" "tar\|zip\|package" \
+    "$PROJECT_ROOT/package.sh" --help
+
+# ============================================================================
+# sign_scripts.sh behavioral tests
+# ============================================================================
+section "sign_scripts.sh"
+
+expect_success "shows help with --help" "$PROJECT_ROOT/sign_scripts.sh" --help
+
+# ============================================================================
+# vibe-extended wrapper
+# ============================================================================
+section "vibe-extended"
+
+expect_success "syntax: vibe-extended" bash -n "$PROJECT_ROOT/vibe-extended"
+
+# ============================================================================
+# Python syntax validation
+# ============================================================================
+section "Python syntax validation"
+
+for pyfile in src/vibe_custom_commands.py src/load_vibe_extensions.py src/__init__.py; do
+    if [[ -f "$PROJECT_ROOT/$pyfile" ]]; then
+        expect_success "py_compile: $pyfile" \
+            python3 -m py_compile "$PROJECT_ROOT/$pyfile"
+    else
+        fail "py_compile: $pyfile" "file not found"
+    fi
+done
+
+# ============================================================================
+# Summary
+# ============================================================================
+echo ""
+echo "=========================================="
+echo "  Results: $PASSED/$TOTAL passed, $FAILED failed"
+echo "=========================================="
+
+if [[ "$FAILED" -gt 0 ]]; then
+    echo -e "${RED}Some tests failed.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}All tests passed.${NC}"
