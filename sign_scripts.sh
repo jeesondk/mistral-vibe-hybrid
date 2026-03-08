@@ -45,7 +45,8 @@ check_gpg() {
 # Sign a script
 sign_script() {
     local script="$1"
-    local sig_file="$SIGNATURE_DIR/$(basename "$script").sig"
+    local sig_file
+    sig_file="$SIGNATURE_DIR/$(basename "$script").sig"
     
     if [ ! -f "$script" ]; then
         error "Script not found: $script"
@@ -69,7 +70,8 @@ sign_script() {
 # Verify a script signature
 verify_script() {
     local script="$1"
-    local sig_file="$SIGNATURE_DIR/$(basename "$script").sig"
+    local sig_file
+    sig_file="$SIGNATURE_DIR/$(basename "$script").sig"
     
     if [ ! -f "$script" ]; then
         error "Script not found: $script"
@@ -103,7 +105,8 @@ create_checksums() {
             sha256sum "$script" >> "$CHECKSUM_FILE"
             
             # Also check if signature exists
-            local sig_file="$SIGNATURE_DIR/$(basename "$script").sig"
+            local sig_file
+    sig_file="$SIGNATURE_DIR/$(basename "$script").sig"
             if [ -f "$sig_file" ]; then
                 sha256sum "$sig_file" >> "$CHECKSUM_FILE"
             fi
@@ -178,7 +181,6 @@ main() {
     check_gpg
     
     # Parse arguments
-    local action="sign"
     local all_scripts=false
     local verify=false
     local create_checksums=false
@@ -223,7 +225,7 @@ main() {
     
     # Handle --all
     if [ "$all_scripts" = true ]; then
-        scripts=($(get_all_scripts))
+        mapfile -t scripts < <(get_all_scripts)
         if [ ${#scripts[@]} -eq 0 ]; then
             error "No scripts found to sign"
         fi
@@ -232,7 +234,7 @@ main() {
     
     # Handle --verify
     if [ "$verify" = true ]; then
-        scripts=($(get_all_scripts))
+        mapfile -t scripts < <(get_all_scripts)
         if [ ${#scripts[@]} -eq 0 ]; then
             error "No scripts found to verify"
         fi
@@ -247,7 +249,7 @@ main() {
     
     # Handle --checksums
     if [ "$create_checksums" = true ]; then
-        scripts=($(get_all_scripts))
+        mapfile -t scripts < <(get_all_scripts)
         if [ ${#scripts[@]} -eq 0 ]; then
             error "No scripts found for checksums"
         fi
@@ -280,7 +282,8 @@ main() {
     echo ""
     echo "Signed scripts:"
     for script in "${scripts[@]}"; do
-        local sig_file="$SIGNATURE_DIR/$(basename "$script").sig"
+        local sig_file
+    sig_file="$SIGNATURE_DIR/$(basename "$script").sig"
         echo "  • $script -> $sig_file"
     done
     echo ""

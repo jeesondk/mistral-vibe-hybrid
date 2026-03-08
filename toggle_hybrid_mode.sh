@@ -154,7 +154,8 @@ switch_to_single() {
     info "Switching to SINGLE mode (Local Mistral only)..."
     
     # Get current worker model from start script
-    local model_path=$(grep -oP 'MODEL_PATH="\K[^"]+' "$PROJECT_ROOT/start_llm_server.sh" 2>/dev/null)
+    local model_path
+    model_path=$(grep -oP 'MODEL_PATH="\K[^"]+' "$PROJECT_ROOT/start_llm_server.sh" 2>/dev/null)
     local model_name="mistral-vibe"
     
     if [ -n "$model_path" ]; then

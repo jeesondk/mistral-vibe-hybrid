@@ -65,7 +65,7 @@ install_project() {
     
     # Create temp directory
     TEMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'vibe_install')
-    trap "rm -rf $TEMP_DIR" EXIT
+    trap 'rm -rf "$TEMP_DIR"' EXIT
     
     # Clone repository
     info "Cloning repository..."

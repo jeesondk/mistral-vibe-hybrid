@@ -1,0 +1,6 @@
+# Exclude info-level and style suggestions that are not bugs
+# SC2162: read without -r (intentional for interactive prompts)
+# SC2009: consider using pgrep (fallback to ps is intentional)
+# SC1091: not following sourced file (shellcheck can't resolve venv paths)
+# SC2129: consider grouping redirects (style preference)
+disable=SC2162,SC2009,SC1091,SC2129

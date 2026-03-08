@@ -43,18 +43,19 @@ create_package() {
             info "Creating tar.gz package: $output_file" >&2
             
             # Create temporary directory structure
-            local temp_dir=$(mktemp -d)
+            local temp_dir
+            temp_dir=$(mktemp -d)
             local project_dir="$temp_dir/${PROJECT_NAME}-${VERSION}"
-            
+
             # Copy files
             mkdir -p "$project_dir"
             cp -r . "$project_dir/"
-            
+
             # Remove unnecessary files
-            rm -rf "$project_dir/$OUTPUT_DIR"
+            rm -rf "${project_dir:?}/${OUTPUT_DIR}"
             rm -rf "$project_dir/.git"
             rm -rf "$project_dir/__pycache__"
-            
+
             # Create tarball
             tar -czf "$output_file" -C "$temp_dir" "${PROJECT_NAME}-${VERSION}"
             
@@ -67,18 +68,19 @@ create_package() {
             info "Creating zip package: $output_file" >&2
             
             # Create temporary directory structure
-            local temp_dir=$(mktemp -d)
+            local temp_dir
+            temp_dir=$(mktemp -d)
             local project_dir="$temp_dir/${PROJECT_NAME}-${VERSION}"
-            
+
             # Copy files
             mkdir -p "$project_dir"
             cp -r . "$project_dir/"
-            
+
             # Remove unnecessary files
-            rm -rf "$project_dir/$OUTPUT_DIR"
+            rm -rf "${project_dir:?}/${OUTPUT_DIR}"
             rm -rf "$project_dir/.git"
             rm -rf "$project_dir/__pycache__"
-            
+
             # Create zip
             (cd "$temp_dir" && zip -r "$output_file" "${PROJECT_NAME}-${VERSION}")
             
@@ -217,7 +219,8 @@ main() {
     # Create packages
     local created_files=()
     for format in "${formats[@]}"; do
-        local file=$(create_package "$format")
+        local file
+        file=$(create_package "$format")
         created_files+=("$file")
     done
     
